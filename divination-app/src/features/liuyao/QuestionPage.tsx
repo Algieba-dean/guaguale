@@ -69,10 +69,25 @@ export function QuestionPage() {
               </Button>
             </div>
 
-            <div className="pt-4 border-t border-border">
+            <div className="pt-4 border-t border-border space-y-3">
               <p className="text-xs text-muted font-light leading-relaxed">
                 💡 完整仪式需要手动投掷六次铜钱，体验传统占卜的仪式感；快速模式则自动生成卦象，节省时间。
               </p>
+
+              <div className="bg-terracotta-tint rounded-2xl p-4 space-y-2">
+                <p className="text-xs text-terracotta font-medium">🪙 硬币规则说明</p>
+                <div className="text-xs text-ink font-light leading-relaxed space-y-1">
+                  <p><strong className="text-yellow-700">正面（阳）：</strong>金色面 - 有字的一面</p>
+                  <p><strong className="text-gray-700">反面（阴）：</strong>银色面 - 无字的一面</p>
+                  <p className="pt-2 border-t border-terracotta/20">
+                    每次投掷3枚硬币：<br/>
+                    · 3个正面 = 老阳 ━━━ （动爻）<br/>
+                    · 2正1反 = 少阳 ━━━<br/>
+                    · 2反1正 = 少阴 ━  ━<br/>
+                    · 3个反面 = 老阴 ━  ━ （动爻）
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
