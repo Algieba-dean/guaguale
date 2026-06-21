@@ -1,0 +1,84 @@
+{
+  "trigrams": {
+    "1": {
+      "number": 1,
+      "name": "乾",
+      "symbol": "☰",
+      "structure": "111",
+      "element": "天",
+      "attribute": "健",
+      "direction": "西北",
+      "family": "父"
+    },
+    "2": {
+      "number": 2,
+      "name": "兑",
+      "symbol": "☱",
+      "structure": "011",
+      "element": "泽",
+      "attribute": "悦",
+      "direction": "西",
+      "family": "少女"
+    },
+    "3": {
+      "number": 3,
+      "name": "离",
+      "symbol": "☲",
+      "structure": "101",
+      "element": "火",
+      "attribute": "丽",
+      "direction": "南",
+      "family": "中女"
+    },
+    "4": {
+      "number": 4,
+      "name": "震",
+      "symbol": "☳",
+      "structure": "001",
+      "element": "雷",
+      "attribute": "动",
+      "direction": "东",
+      "family": "长男"
+    },
+    "5": {
+      "number": 5,
+      "name": "巽",
+      "symbol": "☴",
+      "structure": "110",
+      "element": "风",
+      "attribute": "入",
+      "direction": "东南",
+      "family": "长女"
+    },
+    "6": {
+      "number": 6,
+      "name": "坎",
+      "symbol": "☵",
+      "structure": "010",
+      "element": "水",
+      "attribute": "陷",
+      "direction": "北",
+      "family": "中男"
+    },
+    "7": {
+      "number": 7,
+      "name": "艮",
+      "symbol": "☶",
+      "structure": "100",
+      "element": "山",
+      "attribute": "止",
+      "direction": "东北",
+      "family": "少男"
+    },
+    "8": {
+      "number": 8,
+      "name": "坤",
+      "symbol": "☷",
+      "structure": "000",
+      "element": "地",
+      "attribute": "顺",
+      "direction": "西南",
+      "family": "母"
+    }
+  }
+}
