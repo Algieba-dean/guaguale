@@ -4,7 +4,7 @@ import { PageTransition } from '../../components/shared/PageTransition';
 import { Button } from '../../components/shared/Button';
 import { HexagramDisplay } from '../../components/shared/HexagramDisplay';
 import { CoinAnimation } from '../../components/shared/CoinAnimation';
-import { generateLine, generateAllLines, getLineName, type LineValue } from '../../utils/liuyao';
+import { generateLine, generateAllLines, getLineName, type LineValue, type CoinResult } from '../../utils/liuyao';
 import { linesToStructure } from '../../utils/hexagram';
 
 export function ShakePage() {
@@ -14,6 +14,7 @@ export function ShakePage() {
 
   const [lines, setLines] = useState<LineValue[]>([]);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [coins, setCoins] = useState<CoinResult[] | undefined>(undefined);
 
   // Quick mode: auto-generate all lines
   useEffect(() => {
@@ -46,14 +47,16 @@ export function ShakePage() {
   const handleToss = () => {
     if (isAnimating || lines.length >= 6) return;
 
+    const { coins: tossedCoins, value } = generateLine();
+    // 把三枚铜钱的真实正反结果交给动画播放
+    setCoins(tossedCoins);
     setIsAnimating(true);
-    const { value } = generateLine();
 
     // Simulate coin animation
     setTimeout(() => {
       setLines((prev) => [...prev, value]);
       setIsAnimating(false);
-    }, 1200);
+    }, 1400);
   };
 
   const structure = linesToStructure(lines);
@@ -105,6 +108,7 @@ export function ShakePage() {
               <div className="space-y-6 flex flex-col items-center">
                 <CoinAnimation
                   isAnimating={isAnimating}
+                  coins={coins}
                 />
 
                 <Button
