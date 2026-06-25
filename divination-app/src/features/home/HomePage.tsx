@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { PageTransition } from '../../components/shared/PageTransition';
 import { getStorageStats } from '../../utils/storage';
 import { useEffect, useState } from 'react';
+import { useSEO } from '../../hooks/useSEO';
 
 // Custom Guochao SVGs
 const LiuyaoIcon = () => (
@@ -73,6 +74,12 @@ const ZiweiIcon = () => (
 export function HomePage() {
   const [historyCount, setHistoryCount] = useState(0);
 
+  useSEO({
+    title: '首页 | 周易六爻、梅花易数与紫微斗数占卜排盘',
+    description: '小卦摊是一款专注国学周易占卜排盘的现代化网页应用。支持周易六爻摇卦、梅花易数（时间起卦/数理起卦）与紫微斗数天星排盘，结合AI智能深度解卦剖析运势，体验古典命理与现代科技的融合。',
+    keywords: '占卜, 算命, 周易, 六爻, 梅花易数, 紫微斗数, 排盘, AI解卦, 运势分析, 国学'
+  });
+
   useEffect(() => {
     const stats = getStorageStats();
     setHistoryCount(stats.count);
@@ -142,9 +149,9 @@ export function HomePage() {
                     {method.icon}
                   </div>
                   <div className="space-y-1">
-                    <h3 className="text-2xl font-serif text-ink tracking-wide font-normal">
+                    <h2 className="text-2xl font-serif text-ink tracking-wide font-normal">
                       {method.title}
-                    </h3>
+                    </h2>
                     <p className="text-[10px] text-gold font-sans font-light tracking-widest uppercase">
                       {method.titleEn}
                     </p>

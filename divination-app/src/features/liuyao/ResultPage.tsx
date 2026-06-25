@@ -11,14 +11,24 @@ import {
 } from '../../utils/hexagram';
 import { saveRecord } from '../../utils/storage';
 import { v4 as uuidv4 } from 'uuid';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AIInterpretation } from '../../components/shared/AIInterpretation';
 
 export function ResultPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { question, lines } = location.state as { question: string; lines: LineValue[] };
+  const state = location.state as { question: string; lines: LineValue[] } | null;
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (!state) {
+      navigate('/liuyao', { replace: true });
+    }
+  }, [state, navigate]);
+
+  if (!state) return null;
+
+  const { question, lines } = state;
 
   const structure = linesToStructure(lines);
   const mainHexagram = getHexagramByStructure(structure);
@@ -213,7 +223,7 @@ export function ResultPage() {
               <div className="space-y-3 text-sm text-muted font-light leading-relaxed">
                 <div className="bg-cream rounded-2xl p-4 space-y-2">
                   <p className="text-ink font-normal">📖 本卦（现状）</p>
-                  <p>本卦 <strong className="text-ink">{mainHexagram.name}</strong> 反映当前的状况 and 形势。{mainHexagram.upper}上{mainHexagram.lower}下，需要理解上下卦的关系和相互作用。</p>
+                  <p>本卦 <strong className="text-ink">{mainHexagram.name}</strong> 反映当前的状况和形势。{mainHexagram.upper}上{mainHexagram.lower}下，需要理解上下卦的关系和相互作用。</p>
                 </div>
 
                 {changingLinePositions.length > 0 && (

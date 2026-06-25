@@ -11,9 +11,17 @@ import {
   getStorageStats,
 } from '../../utils/storage';
 import { getHexagramById } from '../../utils/hexagram';
+import { useSEO } from '../../hooks/useSEO';
 
 export function HistoryPage() {
   const navigate = useNavigate();
+
+  useSEO({
+    title: '历史卦印',
+    description: '小卦摊历史记录，本地安全存储您的每一次占卜六爻、梅花易数以及紫微斗数排盘，方便随时回顾与AI解卦历史。',
+    keywords: '占卜历史, 排盘记录, 卦印, 命盘保存'
+  });
+
   const [history, setHistory] = useState<DivinationRecord[]>([]);
   const [selectedRecord, setSelectedRecord] = useState<DivinationRecord | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);

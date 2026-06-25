@@ -6,6 +6,7 @@ import { Button } from '../../components/shared/Button';
 import { saveRecord, type DivinationRecord } from '../../utils/storage';
 import { v4 as uuidv4 } from 'uuid';
 import { AIInterpretation } from '../../components/shared/AIInterpretation';
+import { useSEO } from '../../hooks/useSEO';
 
 interface BirthProfile {
   name: string;
@@ -115,6 +116,13 @@ function CustomDropdown({ value, onChange, options, label, className = '' }: Cus
 
 export function ZiweiPage() {
   const navigate = useNavigate();
+
+  useSEO({
+    title: '紫微斗数排盘',
+    description: '紫微斗数在线天星排盘，依据出生日期与地支时辰快速定位十二宫垣，详尽排布十四主星、吉凶诸曜，支持AI智能全局运势解说。',
+    keywords: '紫微斗数, 星盘, 排盘, 十二宫, 命格, 运势, AI命理, 天星排盘'
+  });
+
   const [profile, setProfile] = useState<BirthProfile>({
     name: '',
     gender: 'male',
