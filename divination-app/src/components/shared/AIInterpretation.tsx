@@ -42,18 +42,20 @@ export function AIInterpretation({ type, data }: AIInterpretationProps) {
     return () => clearInterval(interval);
   }, [loading, thinkingPhrases.length]);
 
+  const serializedData = JSON.stringify(data);
+
   const fetchInterpretation = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await getDivinationInterpretation(type, data);
+      const res = await getDivinationInterpretation(type, JSON.parse(serializedData));
       setResult(res);
     } catch (err: any) {
       setError(err.message || '获取AI解卦失败，请检查网络后重试。');
     } finally {
       setLoading(false);
     }
-  }, [type, data]);
+  }, [type, serializedData]);
 
   // Fetch immediately on load
   useEffect(() => {

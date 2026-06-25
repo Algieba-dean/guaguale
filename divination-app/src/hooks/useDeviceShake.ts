@@ -12,32 +12,25 @@ interface DeviceMotionEventConstructorWithPermission {
   requestPermission?: () => Promise<'granted' | 'denied'>;
 }
 
-/**
- * Check if the DeviceMotion API is available in the current environment.
- */
 export function isShakeAvailable(): boolean {
-  return typeof window !== 'undefined' && 'DeviceMotionEvent' in window;
+  if (typeof window === 'undefined') return false;
+  const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || 
+                   ('ontouchstart' in window);
+  return 'DeviceMotionEvent' in window && isMobile;
 }
 
 /**
  * Custom React hook that detects device shaking via the DeviceMotionEvent API.
- *
- * Handles:
- * - iOS 13+ permission model (DeviceMotionEvent.requestPermission)
- * - Android (no permission needed, auto-attaches listener)
- * - Desktop browsers (graceful no-op)
- * - Cooldown period to prevent rapid-fire triggers
- * - Cleanup on unmount
+ * Uses a velocity/speed-based calculation to cancel gravity and detect shake intent.
  */
 export function useDeviceShake({
   onShake,
-  threshold = 25,
+  threshold = 15, // standard shake.js threshold
   enabled = true,
 }: UseDeviceShakeOptions) {
   const [permissionGranted, setPermissionGranted] = useState(false);
 
-  // Keep a stable ref to the latest onShake callback so the motion handler
-  // never closes over a stale version.
+  // Keep a stable ref to the latest onShake callback
   const onShakeRef = useRef(onShake);
   useEffect(() => {
     onShakeRef.current = onShake;
@@ -75,34 +68,56 @@ export function useDeviceShake({
     const DME = DeviceMotionEvent as unknown as DeviceMotionEventConstructorWithPermission;
     const needsPermission = typeof DME.requestPermission === 'function';
 
-    // On platforms that don't require an explicit permission request we can
-    // treat motion as implicitly permitted.
     if (!needsPermission && !permissionGranted) {
       setPermissionGranted(true);
     }
 
-    // If explicit permission is required but hasn't been granted yet, bail out
-    // and wait for the user to call `requestPermission`.
     if (needsPermission && !permissionGranted) return;
 
-    const COOLDOWN_MS = 800;
+    const COOLDOWN_MS = 1000;
+    let lastX: number | null = null;
+    let lastY: number | null = null;
+    let lastZ: number | null = null;
+    let lastTime = 0;
 
     const handleMotion = (event: DeviceMotionEvent) => {
-      const { accelerationIncludingGravity } = event;
-      if (!accelerationIncludingGravity) return;
+      // Prefer acceleration (which excludes gravity) if available
+      const acc = event.acceleration || event.accelerationIncludingGravity;
+      if (!acc) return;
 
-      const { x, y, z } = accelerationIncludingGravity;
+      const { x, y, z } = acc;
       if (x === null || y === null || z === null) return;
 
-      // Compute the total acceleration force across all three axes.
-      const force = Math.sqrt(x * x + y * y + z * z);
+      const currentTime = Date.now();
+      if (lastTime === 0) {
+        lastTime = currentTime;
+        lastX = x;
+        lastY = y;
+        lastZ = z;
+        return;
+      }
 
-      if (force >= threshold) {
-        const now = Date.now();
-        if (now - lastTriggerRef.current >= COOLDOWN_MS) {
-          lastTriggerRef.current = now;
-          onShakeRef.current();
+      const diffTime = currentTime - lastTime;
+      // Sampling rate limit (approx. every 80ms) to avoid noise
+      if (diffTime > 80) {
+        lastTime = currentTime;
+
+        if (lastX !== null && lastY !== null && lastZ !== null) {
+          // Standard shake velocity/speed calculation formula
+          const speed = (Math.abs(x + y + z - lastX - lastY - lastZ) / diffTime) * 10000;
+
+          if (speed >= threshold) {
+            const now = Date.now();
+            if (now - lastTriggerRef.current >= COOLDOWN_MS) {
+              lastTriggerRef.current = now;
+              onShakeRef.current();
+            }
+          }
         }
+
+        lastX = x;
+        lastY = y;
+        lastZ = z;
       }
     };
 

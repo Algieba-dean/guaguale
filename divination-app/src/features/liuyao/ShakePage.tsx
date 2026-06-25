@@ -53,7 +53,7 @@ export function ShakePage() {
 
   const { requestPermission, permissionGranted } = useDeviceShake({
     onShake: handleShake,
-    threshold: 25,
+    threshold: 15,
     enabled: shakeEnabled,
   });
 
