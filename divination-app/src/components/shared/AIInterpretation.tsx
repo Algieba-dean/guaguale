@@ -14,22 +14,22 @@ export function AIInterpretation({ type, data }: AIInterpretationProps) {
 
   const thinkingPhrases = {
     liuyao: [
-      '正在平息尘虑，凝神起誓...',
-      '乾坤既定，正在模拟铜钱翻滚...',
-      '六爻重叠，变爻交错，正在推演卦象...',
-      '感应天地，正在破译周易卦爻天机...'
+      '正在认真看你的卦象...',
+      '铜钱落定，正在分析每一爻...',
+      '变爻和卦辞都看完了，正在整理思路...',
+      'AI 正在组织语言，马上就好...'
     ],
     meihua: [
-      '不执铜钱，感时而动...',
-      '正在根据干支数理排定卦象...',
-      '体用生克，主宾互易，正在研判气场...',
-      '象数相照，正在撰写梅花断案启迪...'
+      '收到你的数据了，正在起卦...',
+      '上卦下卦都排好了，正在分析...',
+      '体用关系和五行生克都理清了...',
+      '正在写解读，稍等一下...'
     ],
     ziwei: [
-      '正在输入生辰阴阳八字，核算干支...',
-      '天星罗列，十二宫垣排盘定位...',
-      '命主星曜起落归垣，正在研判格局...',
-      '正在推演流限星象，书写修心解厄法要...'
+      '正在根据你的生辰排盘...',
+      '十二宫位都排好了，正在研究...',
+      '命宫主星和格局都看过了...',
+      'AI 正在写分析报告...'
     ]
   }[type];
 
@@ -121,11 +121,11 @@ export function AIInterpretation({ type, data }: AIInterpretationProps) {
             <circle cx="10" cy="5.5" r="1.2" fill="currentColor" />
             <circle cx="10" cy="14.5" r="1.2" fill="none" stroke="currentColor" strokeWidth="1" />
           </svg>
-          <span>AI 命理宗师深度解卦</span>
+          <span>AI 智能解读</span>
         </h3>
         {loading && (
           <span className="text-[10px] text-gold tracking-widest font-sans uppercase animate-pulse">
-            天机推演中
+            分析中
           </span>
         )}
       </div>
@@ -151,7 +151,7 @@ export function AIInterpretation({ type, data }: AIInterpretationProps) {
           <div className="p-4 bg-red-950/20 border border-red-500/20 rounded-2xl text-red-400 text-xs font-sans flex items-start gap-3">
             <span className="text-base mt-0.5">⚠️</span>
             <div className="space-y-1">
-              <p className="font-medium text-red-300">卦象感应中断 (解卦发生错误)</p>
+              <p className="font-medium text-red-300">解读出错了</p>
               <p className="opacity-85 leading-relaxed">{error}</p>
             </div>
           </div>
@@ -160,7 +160,7 @@ export function AIInterpretation({ type, data }: AIInterpretationProps) {
               onClick={fetchInterpretation}
               className="px-5 py-2 rounded-full border border-terracotta text-terracotta text-xs font-sans tracking-widest hover:bg-terracotta hover:text-white transition-all duration-300 shadow-sm shadow-terracotta/5 active:scale-95 cursor-pointer"
             >
-              🔄 重新沟通天地（重试）
+               🔄 重新解读
             </button>
           </div>
         </div>

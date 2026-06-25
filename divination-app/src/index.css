@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
+/* ===== DARK THEME (Default) ===== */
 @theme {
   /* Premium Dark Guochao / Astral Ink & Gold Palette */
   --color-cream: #0B0C10;         /* Deepest ink black background */
@@ -22,6 +23,24 @@
   --radius-pill: 999px;
 }
 
+/* ===== LIGHT THEME ===== */
+/* Inspired by traditional Chinese rice paper (宣纸) + warm earth tones
+   Feels elegant, warm, and premium — like a beautiful calligraphy studio */
+[data-theme="light"] {
+  --color-cream: #F8F4ED;               /* Warm ivory parchment */
+  --color-cream-light: #FFFFFF;          /* Clean white card surface */
+  --color-terracotta: #C94A3A;           /* Deeper cinnabar for light bg contrast */
+  --color-terracotta-dark: #A83B2D;
+  --color-terracotta-tint: rgba(201, 74, 58, 0.08);
+  --color-ink: #2C2418;                  /* Rich dark brown ink */
+  --color-muted: #8A7F72;               /* Warm grey-brown for subtext */
+  --color-border: rgba(180, 155, 110, 0.25); /* Warm tan border */
+
+  --color-gold: #B8922E;                /* Aged gold — not too bright on light bg */
+  --color-gold-tint: rgba(184, 146, 46, 0.06);
+  --color-gold-dark: #9A7A24;
+}
+
 body {
   font-weight: 300;
   color: var(--color-ink);
@@ -32,6 +51,15 @@ body {
   background-attachment: fixed;
   min-height: 100vh;
   overflow-x: hidden;
+  transition: background 0.4s ease, color 0.3s ease;
+}
+
+/* Light theme body background */
+[data-theme="light"] body {
+  background: 
+    radial-gradient(circle at 50% 0%, rgba(201, 74, 58, 0.04) 0%, transparent 45%),
+    radial-gradient(circle at 80% 80%, rgba(184, 146, 46, 0.05) 0%, transparent 50%),
+    linear-gradient(to bottom, #FAF6EF, #F2ECE1);
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -55,3 +83,33 @@ h1, h2, h3, h4, h5, h6 {
   background: var(--color-gold);
 }
 
+/* Light theme scrollbar */
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: rgba(180, 155, 110, 0.3);
+}
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--color-gold);
+}
+
+/* Light theme specific overrides for elements using rgba with hardcoded values */
+[data-theme="light"] .shadow-\[0_0_20px_rgba\(223\,177\,91\,0\.08\)\] {
+  --tw-shadow: 0 0 20px rgba(184, 146, 46, 0.1);
+}
+
+/* Smooth transitions for theme-sensitive elements */
+[data-theme="light"] *,
+[data-theme="light"] *::before,
+[data-theme="light"] *::after {
+  transition-property: background-color, border-color, color, box-shadow;
+  transition-duration: 0.3s;
+  transition-timing-function: ease;
+}
+
+/* Scrollbar none utility */
+.scrollbar-none {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}

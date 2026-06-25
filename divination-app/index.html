@@ -25,6 +25,15 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@200..900&family=Zhi+Mang+Xing&display=swap" rel="stylesheet">
     <script>
+      // Restore theme before render to prevent flash
+      (function() {
+        var theme = localStorage.getItem('guaguale-theme');
+        if (theme === 'light' || theme === 'dark') {
+          document.documentElement.setAttribute('data-theme', theme);
+        }
+      })();
+    </script>
+    <script>
       window.addEventListener('beforeinstallprompt', (e) => {
         window.deferredInstallPrompt = e;
       });

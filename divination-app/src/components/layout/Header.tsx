@@ -1,8 +1,10 @@
 import { Link, useLocation } from 'react-router-dom';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
+import { useTheme } from '../../hooks/useTheme';
 
 export function Header() {
   const { isInstallable, installApp } = usePWAInstall();
+  const { isDark, toggleTheme } = useTheme();
   const location = useLocation();
 
   const isActive = (path: string) => {
@@ -33,7 +35,7 @@ export function Header() {
             </span>
           </Link>
 
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-4 md:gap-8">
             <nav className="hidden md:flex items-center gap-8">
               {links.map((link) => {
                 const active = isActive(link.path);
@@ -52,6 +54,34 @@ export function Header() {
                 );
               })}
             </nav>
+
+            {/* Theme Toggle Button */}
+            <button
+              onClick={toggleTheme}
+              className="relative w-9 h-9 rounded-full border border-border hover:border-gold/40 flex items-center justify-center transition-all duration-300 hover:bg-gold-tint active:scale-90 cursor-pointer group"
+              aria-label={isDark ? '切换到浅色模式' : '切换到深色模式'}
+              title={isDark ? '切换到浅色模式' : '切换到深色模式'}
+            >
+              {isDark ? (
+                /* Sun icon for switching to light mode */
+                <svg className="w-4 h-4 text-gold group-hover:rotate-45 transition-transform duration-500" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <circle cx="10" cy="10" r="3.5" />
+                  <line x1="10" y1="1" x2="10" y2="4" />
+                  <line x1="10" y1="16" x2="10" y2="19" />
+                  <line x1="1" y1="10" x2="4" y2="10" />
+                  <line x1="16" y1="10" x2="19" y2="10" />
+                  <line x1="3.64" y1="3.64" x2="5.76" y2="5.76" />
+                  <line x1="14.24" y1="14.24" x2="16.36" y2="16.36" />
+                  <line x1="3.64" y1="16.36" x2="5.76" y2="14.24" />
+                  <line x1="14.24" y1="5.76" x2="16.36" y2="3.64" />
+                </svg>
+              ) : (
+                /* Moon icon for switching to dark mode */
+                <svg className="w-4 h-4 text-gold group-hover:-rotate-12 transition-transform duration-500" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M17 10.5A7.5 7.5 0 019.5 3 7 7 0 1017 10.5z" />
+                </svg>
+              )}
+            </button>
 
             {isInstallable && (
               <button

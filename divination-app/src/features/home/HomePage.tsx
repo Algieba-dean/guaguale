@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { PageTransition } from '../../components/shared/PageTransition';
 import { getStorageStats } from '../../utils/storage';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSEO } from '../../hooks/useSEO';
 
 // Custom Guochao SVGs
@@ -73,6 +73,8 @@ const ZiweiIcon = () => (
 
 export function HomePage() {
   const [historyCount, setHistoryCount] = useState(0);
+  const [activeCard, setActiveCard] = useState(0);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useSEO({
     title: '首页 | 周易六爻、梅花易数与紫微斗数占卜排盘',
@@ -84,6 +86,25 @@ export function HomePage() {
     const stats = getStorageStats();
     setHistoryCount(stats.count);
   }, []);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const element = e.currentTarget;
+    const scrollPosition = element.scrollLeft;
+    const cardWidth = 290 + 24; // width (290) + gap (24/6)
+    const index = Math.round(scrollPosition / cardWidth);
+    setActiveCard(Math.max(0, Math.min(methods.length - 1, index)));
+  };
+
+  const scrollToCard = (index: number) => {
+    if (scrollContainerRef.current) {
+      const cardWidth = 290 + 24; // width + gap
+      scrollContainerRef.current.scrollTo({
+        left: index * cardWidth,
+        behavior: 'smooth'
+      });
+      setActiveCard(index);
+    }
+  };
 
   const methods = [
     {
@@ -116,59 +137,79 @@ export function HomePage() {
     <PageTransition>
       <div className="min-h-screen flex flex-col justify-center">
         {/* Hero Section */}
-        <section className="flex-1 flex flex-col items-center justify-center px-6 py-12 md:py-20 relative">
-          <div className="max-w-4xl mx-auto text-center space-y-10 relative z-10">
+        <section className="flex-1 flex flex-col items-center justify-center px-4 py-8 md:py-20 relative">
+          <div className="max-w-4xl mx-auto text-center space-y-8 md:space-y-10 relative z-10 w-full">
             {/* Eyebrow badge */}
-            <div className="inline-block px-5 py-1.5 rounded-full border border-gold/20 bg-gold-tint text-gold text-xs font-sans tracking-widest uppercase">
+            <div className="inline-block px-5 py-1.5 rounded-full border border-gold/20 bg-gold-tint text-gold text-xs font-sans tracking-widest uppercase transition-all duration-300 hover:scale-105">
               ☯️ 传统易占 · 现代呈现 ☯️
             </div>
 
             {/* Main Heading */}
-            <h1 className="text-6xl md:text-7xl font-calligraphy text-ink leading-tight tracking-widest py-2">
+            <h1 className="text-[2.6rem] leading-[1.3] md:text-7xl font-calligraphy text-ink tracking-widest py-2">
               问心之所向
               <br />
-              <span className="text-gold font-calligraphy block mt-4 drop-shadow-[0_2px_15px_rgba(223,177,91,0.25)]">
+              <span className="text-gold font-calligraphy block mt-2 md:mt-4 drop-shadow-[0_2px_15px_rgba(223,177,91,0.25)]">
                 探未知之途
               </span>
             </h1>
 
             {/* Description */}
-            <p className="text-base md:text-lg text-muted font-sans font-light max-w-2xl mx-auto leading-relaxed tracking-wider">
+            <p className="text-sm md:text-lg text-muted font-sans font-light max-w-2xl mx-auto leading-relaxed tracking-wider px-2">
               借古老易理之光，照亮当下人生的抉择。三种中华传统起卦方式，在此融为现代科技的灵性慰藉。
             </p>
 
-            {/* Method Cards */}
-            <div className="grid md:grid-cols-3 gap-6 mt-16 max-w-5xl mx-auto">
-              {methods.map((method) => (
-                <Link
-                  key={method.path}
-                  to={method.path}
-                  className={`group bg-cream-light/45 backdrop-blur-md rounded-3xl border border-border ${method.borderGlow} p-8 flex flex-col items-center text-center space-y-6 transition-all duration-300 hover:-translate-y-1.5`}
-                >
-                  <div className="p-3 bg-cream/80 rounded-full border border-border/50 shadow-inner group-hover:scale-105 transition-transform duration-300">
-                    {method.icon}
-                  </div>
-                  <div className="space-y-1">
-                    <h2 className="text-2xl font-serif text-ink tracking-wide font-normal">
-                      {method.title}
-                    </h2>
-                    <p className="text-[10px] text-gold font-sans font-light tracking-widest uppercase">
-                      {method.titleEn}
+            {/* Method Cards - Carousel on mobile, grid on desktop */}
+            <div className="w-full">
+              <div 
+                ref={scrollContainerRef}
+                onScroll={handleScroll}
+                className="flex md:grid md:grid-cols-3 gap-6 mt-10 md:mt-16 w-full overflow-x-auto snap-x snap-mandatory scrollbar-none pb-6 px-6 -mx-6 md:px-0 md:mx-0 md:overflow-visible"
+              >
+                {methods.map((method) => (
+                  <Link
+                    key={method.path}
+                    to={method.path}
+                    className={`group snap-center shrink-0 w-[290px] md:w-auto bg-cream-light/45 backdrop-blur-md rounded-3xl border border-border ${method.borderGlow} p-8 flex flex-col items-center text-center space-y-6 transition-all duration-300 hover:-translate-y-1.5`}
+                  >
+                    <div className="p-3 bg-cream/80 rounded-full border border-border/50 shadow-inner group-hover:scale-105 transition-transform duration-300">
+                      {method.icon}
+                    </div>
+                    <div className="space-y-1">
+                      <h2 className="text-2xl font-serif text-ink tracking-wide font-normal">
+                        {method.title}
+                      </h2>
+                      <p className="text-[10px] text-gold font-sans font-light tracking-widest uppercase">
+                        {method.titleEn}
+                      </p>
+                    </div>
+                    <p className="text-sm text-muted font-sans font-light leading-relaxed h-12 flex items-center justify-center">
+                      {method.description}
                     </p>
-                  </div>
-                  <p className="text-sm text-muted font-sans font-light leading-relaxed h-12 flex items-center justify-center">
-                    {method.description}
-                  </p>
-                  <div className="pt-2 text-gold text-sm font-sans font-light tracking-widest group-hover:text-terracotta group-hover:translate-x-1 transition-all duration-300">
-                    探寻起卦 →
-                  </div>
-                </Link>
-              ))}
+                    <div className="pt-2 text-gold text-sm font-sans font-light tracking-widest group-hover:text-terracotta group-hover:translate-x-1 transition-all duration-300">
+                      探寻起卦 →
+                    </div>
+                  </Link>
+                ))}
+              </div>
+
+              {/* Pagination Dots (Mobile Only) */}
+              <div className="flex justify-center gap-2 mt-2 md:hidden">
+                {methods.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => scrollToCard(index)}
+                    className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                      activeCard === index ? 'w-5 bg-gold' : 'w-1.5 bg-border hover:bg-gold/45'
+                    }`}
+                    aria-label={`Go to slide ${index + 1}`}
+                  />
+                ))}
+              </div>
             </div>
 
             {/* History Summary */}
             {historyCount > 0 && (
-              <div className="pt-8">
+              <div className="pt-4 md:pt-8">
                 <Link
                   to="/history"
                   className="inline-flex items-center gap-3 px-6 py-2.5 rounded-full border border-border/80 bg-cream-light/50 backdrop-blur-sm text-muted hover:text-gold hover:border-gold/40 hover:bg-gold-tint transition-all duration-300 font-sans font-light text-sm"

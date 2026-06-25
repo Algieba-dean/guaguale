@@ -18,8 +18,8 @@ export default defineConfig(({ mode }) => {
           name: '小卦摊',
           short_name: '小卦摊',
           description: '周易六爻、梅花易数与紫微斗数排盘占卜工具',
-          theme_color: '#F5EFE6',
-          background_color: '#F5EFE6',
+          theme_color: '#0B0C10',
+          background_color: '#0B0C10',
           display: 'standalone',
           orientation: 'portrait-primary',
           icons: [
