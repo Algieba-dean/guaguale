@@ -2,6 +2,18 @@
 <html lang="zh-Hans">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // Redirect to unified domain in production
+      (function() {
+        var targetDomain = 'xgt.algieba12.cn';
+        if (window.location.hostname !== targetDomain && 
+            window.location.hostname !== 'localhost' && 
+            window.location.hostname !== '127.0.0.1' &&
+            !window.location.hostname.endsWith('.local')) {
+          window.location.replace('https://' + targetDomain + window.location.pathname + window.location.search + window.location.hash);
+        }
+      })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>小卦摊 - 传统周易六爻、梅花易数与紫微斗数AI占卜排盘</title>

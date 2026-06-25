@@ -36,6 +36,14 @@ export function useDeviceShake({
     onShakeRef.current = onShake;
   }, [onShake]);
 
+  // Keep a stable ref to the enabled state so the event listener
+  // is NOT constantly attached and detached during state changes.
+  // This prevents transient calibration spikes when animations finish.
+  const enabledRef = useRef(enabled);
+  useEffect(() => {
+    enabledRef.current = enabled;
+  }, [enabled]);
+
   const lastTriggerRef = useRef<number>(0);
 
   // ---- iOS 13+ permission flow ----
@@ -63,7 +71,7 @@ export function useDeviceShake({
 
   // ---- Attach / detach the devicemotion listener ----
   useEffect(() => {
-    if (!enabled || !isShakeAvailable()) return;
+    if (!isShakeAvailable()) return;
 
     const DME = DeviceMotionEvent as unknown as DeviceMotionEventConstructorWithPermission;
     const needsPermission = typeof DME.requestPermission === 'function';
@@ -74,14 +82,14 @@ export function useDeviceShake({
 
     if (needsPermission && !permissionGranted) return;
 
-    const COOLDOWN_MS = 1000;
+    const COOLDOWN_MS = 1200; // Slightly longer cooldown to avoid double triggers
     let lastX: number | null = null;
     let lastY: number | null = null;
     let lastZ: number | null = null;
     let lastTime = 0;
 
     const handleMotion = (event: DeviceMotionEvent) => {
-      // Prefer acceleration (which excludes gravity) if available
+      // Prefer acceleration (excludes gravity) if available
       const acc = event.acceleration || event.accelerationIncludingGravity;
       if (!acc) return;
 
@@ -98,15 +106,19 @@ export function useDeviceShake({
       }
 
       const diffTime = currentTime - lastTime;
-      // Sampling rate limit (approx. every 80ms) to avoid noise
-      if (diffTime > 80) {
+      // Sampling rate limit (approx. every 60ms) to avoid noise
+      if (diffTime > 60) {
         lastTime = currentTime;
 
         if (lastX !== null && lastY !== null && lastZ !== null) {
-          // Standard shake velocity/speed calculation formula
-          const speed = (Math.abs(x + y + z - lastX - lastY - lastZ) / diffTime) * 10000;
+          // Calculate difference sum across all three axes to cancel gravity
+          const deltaX = Math.abs(x - lastX);
+          const deltaY = Math.abs(y - lastY);
+          const deltaZ = Math.abs(z - lastZ);
+          const totalChange = deltaX + deltaY + deltaZ;
 
-          if (speed >= threshold) {
+          // Only trigger if shaking is active, enabled is true, and cooldown passed
+          if (enabledRef.current && totalChange >= threshold) {
             const now = Date.now();
             if (now - lastTriggerRef.current >= COOLDOWN_MS) {
               lastTriggerRef.current = now;
@@ -126,7 +138,7 @@ export function useDeviceShake({
     return () => {
       window.removeEventListener('devicemotion', handleMotion);
     };
-  }, [enabled, permissionGranted, threshold]);
+  }, [permissionGranted, threshold]); // Exclude enabledRef.current to keep listener bound
 
   return { requestPermission, permissionGranted };
 }
