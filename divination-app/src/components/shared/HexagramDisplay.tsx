@@ -25,7 +25,7 @@ export function HexagramDisplay({
   return (
     <div className={`flex flex-col ${styles.gap} items-center`}>
       {lines.map((line, index) => {
-        const position = index + 1; // 1-indexed from bottom
+        const position = 6 - index; // 1-indexed from bottom (reversed array index 0 maps to top position 6)
         const isChanging = changingLines.includes(position);
         const isYang = line === '1';
 
@@ -39,21 +39,27 @@ export function HexagramDisplay({
             {isYang ? (
               // Solid yang line
               <div
-                className={`w-full ${styles.lineHeight} rounded-sm ${
-                  isChanging ? 'bg-terracotta' : 'bg-ink'
+                className={`w-full ${styles.lineHeight} rounded-sm transition-all duration-300 ${
+                  isChanging
+                    ? 'bg-terracotta shadow-[0_0_10px_rgba(232,85,62,0.5)]'
+                    : 'bg-gold shadow-[0_0_5px_rgba(223,177,91,0.2)]'
                 }`}
               />
             ) : (
               // Broken yin line
-              <div className="w-full flex gap-2 justify-center">
+              <div className="w-full flex gap-3 justify-center">
                 <div
-                  className={`flex-1 ${styles.lineHeight} rounded-sm ${
-                    isChanging ? 'bg-terracotta' : 'bg-ink'
+                  className={`flex-1 ${styles.lineHeight} rounded-sm transition-all duration-300 ${
+                    isChanging
+                      ? 'bg-terracotta shadow-[0_0_10px_rgba(232,85,62,0.5)]'
+                      : 'bg-muted/70'
                   }`}
                 />
                 <div
-                  className={`flex-1 ${styles.lineHeight} rounded-sm ${
-                    isChanging ? 'bg-terracotta' : 'bg-ink'
+                  className={`flex-1 ${styles.lineHeight} rounded-sm transition-all duration-300 ${
+                    isChanging
+                      ? 'bg-terracotta shadow-[0_0_10px_rgba(232,85,62,0.5)]'
+                      : 'bg-muted/70'
                   }`}
                 />
               </div>

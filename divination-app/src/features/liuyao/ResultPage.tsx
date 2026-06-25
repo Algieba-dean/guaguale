@@ -12,6 +12,7 @@ import {
 import { saveRecord } from '../../utils/storage';
 import { v4 as uuidv4 } from 'uuid';
 import { useState } from 'react';
+import { AIInterpretation } from '../../components/shared/AIInterpretation';
 
 export function ResultPage() {
   const location = useLocation();
@@ -52,6 +53,31 @@ export function ResultPage() {
       </PageTransition>
     );
   }
+
+  const aiData = {
+    question,
+    mainHexagram: {
+      name: mainHexagram.name,
+      unicode: mainHexagram.unicode,
+      judgment: mainHexagram.judgment ? {
+        original: mainHexagram.judgment.original || '',
+        translation: mainHexagram.judgment.translation || ''
+      } : undefined,
+      lines: mainHexagram.lines ? mainHexagram.lines.map(line => ({
+        original: line.original || '',
+        translation: line.translation || ''
+      })) : undefined
+    },
+    changingLines: changingLinePositions,
+    transformedHexagram: transformedHexagram ? {
+      name: transformedHexagram.name,
+      unicode: transformedHexagram.unicode,
+      judgment: transformedHexagram.judgment ? {
+        original: transformedHexagram.judgment.original || '',
+        translation: transformedHexagram.judgment.translation || ''
+      } : undefined
+    } : null
+  };
 
   return (
     <PageTransition>
@@ -187,7 +213,7 @@ export function ResultPage() {
               <div className="space-y-3 text-sm text-muted font-light leading-relaxed">
                 <div className="bg-cream rounded-2xl p-4 space-y-2">
                   <p className="text-ink font-normal">📖 本卦（现状）</p>
-                  <p>本卦 <strong className="text-ink">{mainHexagram.name}</strong> 反映当前的状况和形势。{mainHexagram.upper}上{mainHexagram.lower}下，需要理解上下卦的关系和相互作用。</p>
+                  <p>本卦 <strong className="text-ink">{mainHexagram.name}</strong> 反映当前的状况 and 形势。{mainHexagram.upper}上{mainHexagram.lower}下，需要理解上下卦的关系和相互作用。</p>
                 </div>
 
                 {changingLinePositions.length > 0 && (
@@ -228,6 +254,9 @@ export function ResultPage() {
               </div>
             </div>
           </div>
+
+          {/* AI Interpretation */}
+          <AIInterpretation type="liuyao" data={aiData} />
 
           {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

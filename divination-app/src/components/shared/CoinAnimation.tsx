@@ -23,13 +23,46 @@ function Coin({
   reducedMotion: boolean;
 }) {
   const headsFace = (
-    <div className="w-full h-full rounded-full bg-gradient-to-br from-yellow-300 via-yellow-400 to-yellow-600 border-yellow-500 border-4 flex items-center justify-center shadow-lg">
-      <span className="text-xs font-serif text-yellow-900">正</span>
+    <div className="w-full h-full select-none">
+      <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-md">
+        <defs>
+          <linearGradient id="heads-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#FCE7B2" />
+            <stop offset="30%" stopColor="#D7B568" />
+            <stop offset="70%" stopColor="#9E7C3B" />
+            <stop offset="100%" stopColor="#6E501C" />
+          </linearGradient>
+        </defs>
+        <path d="M 50 4 A 46 46 0 1 1 49.9 4 Z M 40 40 L 60 40 L 60 60 L 40 60 Z" fill="url(#heads-grad)" fillRule="evenodd" stroke="#5C4214" strokeWidth="1.5" />
+        <circle cx="50" cy="50" r="43" fill="none" stroke="#FCE7B2" strokeWidth="1" opacity="0.3" />
+        <rect x="38" y="38" width="24" height="24" rx="2" fill="none" stroke="#5C4214" strokeWidth="1.5" />
+        <text x="50" y="27" textAnchor="middle" fontFamily="'Ma Shan Zheng', 'Zhi Mang Xing', cursive" fontWeight="bold" fontSize="15" fill="#422E0B">乾</text>
+        <text x="50" y="81" textAnchor="middle" fontFamily="'Ma Shan Zheng', 'Zhi Mang Xing', cursive" fontWeight="bold" fontSize="15" fill="#422E0B">坤</text>
+        <text x="25" y="55" textAnchor="middle" fontFamily="'Ma Shan Zheng', 'Zhi Mang Xing', cursive" fontWeight="bold" fontSize="15" fill="#422E0B">通</text>
+        <text x="75" y="55" textAnchor="middle" fontFamily="'Ma Shan Zheng', 'Zhi Mang Xing', cursive" fontWeight="bold" fontSize="15" fill="#422E0B">宝</text>
+      </svg>
     </div>
   );
+
   const tailsFace = (
-    <div className="w-full h-full rounded-full bg-gradient-to-br from-gray-300 via-gray-400 to-gray-500 border-gray-600 border-4 flex items-center justify-center shadow-lg">
-      <span className="text-xs font-serif text-gray-900">反</span>
+    <div className="w-full h-full select-none">
+      <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-md">
+        <defs>
+          <linearGradient id="tails-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#E2E6E9" />
+            <stop offset="30%" stopColor="#B0B8C0" />
+            <stop offset="70%" stopColor="#737E88" />
+            <stop offset="100%" stopColor="#4B535A" />
+          </linearGradient>
+        </defs>
+        <path d="M 50 4 A 46 46 0 1 1 49.9 4 Z M 40 40 L 60 40 L 60 60 L 40 60 Z" fill="url(#tails-grad)" fillRule="evenodd" stroke="#2D3337" strokeWidth="1.5" />
+        <circle cx="50" cy="50" r="43" fill="none" stroke="#FFFFFF" strokeWidth="1" opacity="0.3" />
+        <rect x="38" y="38" width="24" height="24" rx="2" fill="none" stroke="#2D3337" strokeWidth="1.5" />
+        <text x="50" y="27" textAnchor="middle" fontFamily="'Ma Shan Zheng', 'Zhi Mang Xing', cursive" fontWeight="bold" fontSize="15" fill="#202427">阴</text>
+        <text x="50" y="81" textAnchor="middle" fontFamily="'Ma Shan Zheng', 'Zhi Mang Xing', cursive" fontWeight="bold" fontSize="15" fill="#202427">阳</text>
+        <text x="25" y="55" textAnchor="middle" fontFamily="'Ma Shan Zheng', 'Zhi Mang Xing', cursive" fontWeight="bold" fontSize="15" fill="#202427">贞</text>
+        <text x="75" y="55" textAnchor="middle" fontFamily="'Ma Shan Zheng', 'Zhi Mang Xing', cursive" fontWeight="bold" fontSize="15" fill="#202427">吉</text>
+      </svg>
     </div>
   );
 
@@ -37,7 +70,7 @@ function Coin({
   if (isAnimating) {
     return (
       <motion.div
-        className="w-14 h-14"
+        className="w-16 h-16"
         style={{ transformStyle: 'preserve-3d' }}
         animate={{
           rotateY: reducedMotion ? 0 : [0, 360, 720, 1080],
@@ -58,7 +91,7 @@ function Coin({
   if (result) {
     return (
       <motion.div
-        className="w-14 h-14"
+        className="w-16 h-16"
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
       >
@@ -68,7 +101,7 @@ function Coin({
   }
 
   // 静止状态（默认显示正面）
-  return <div className="w-14 h-14">{headsFace}</div>;
+  return <div className="w-16 h-16">{headsFace}</div>;
 }
 
 export function CoinAnimation({ onComplete, isAnimating = false, coins }: CoinAnimationProps) {

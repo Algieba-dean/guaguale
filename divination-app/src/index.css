@@ -1,27 +1,57 @@
 @import "tailwindcss";
 
 @theme {
-  --color-cream: #F7F4EF;
-  --color-cream-light: #FBF9F5;
-  --color-terracotta: #C4612F;
-  --color-terracotta-dark: #A94E22;
-  --color-terracotta-tint: #F2E3D6;
-  --color-ink: #1F2421;
-  --color-muted: #5C635D;
-  --color-border: #E7E1D7;
+  /* Premium Dark Guochao / Astral Ink & Gold Palette */
+  --color-cream: #0B0C10;         /* Deepest ink black background */
+  --color-cream-light: #161822;   /* Obsidian card surface */
+  --color-terracotta: #E8553E;    /* Vibrant modern cinnabar red */
+  --color-terracotta-dark: #C53D2A;
+  --color-terracotta-tint: rgba(232, 85, 62, 0.12);
+  --color-ink: #F0EADF;           /* Ancient scroll cream white text */
+  --color-muted: #8E96A5;         /* Elegant steel grey for subtext */
+  --color-border: rgba(223, 177, 91, 0.15); /* Translucent bronze/gold border */
+  
+  --color-gold: #DFB15B;          /* Imperial gold accent */
+  --color-gold-tint: rgba(223, 177, 91, 0.08);
+  --color-gold-dark: #BFA146;
 
-  --font-family-serif: Fraunces, 'DM Serif Display', 'Playfair Display', serif;
+  --font-family-serif: Fraunces, "Noto Serif SC", serif;
   --font-family-sans: Inter, system-ui, sans-serif;
+  --font-family-calligraphy: "Zhi Mang Xing", "Ma Shan Zheng", cursive;
 
   --radius-pill: 999px;
 }
 
 body {
   font-weight: 300;
+  color: var(--color-ink);
+  background: 
+    radial-gradient(circle at 50% 15%, rgba(232, 85, 62, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(223, 177, 91, 0.05) 0%, transparent 60%),
+    linear-gradient(to bottom, #0A0A0E, #0D0E15);
+  background-attachment: fixed;
+  min-height: 100vh;
+  overflow-x: hidden;
 }
 
 h1, h2, h3, h4, h5, h6 {
   font-weight: 400;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
+}
+
+/* Custom Scrollbar for premium feel */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-cream);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(223, 177, 91, 0.2);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-gold);
 }
 

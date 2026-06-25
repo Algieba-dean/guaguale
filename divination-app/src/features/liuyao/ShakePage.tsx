@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { PageTransition } from '../../components/shared/PageTransition';
 import { Button } from '../../components/shared/Button';
@@ -44,7 +44,7 @@ export function ShakePage() {
     }
   }, [lines, navigate, question]);
 
-  const handleToss = () => {
+  const handleToss = useCallback(() => {
     if (isAnimating || lines.length >= 6) return;
 
     const { coins: tossedCoins, value } = generateLine();
@@ -57,7 +57,24 @@ export function ShakePage() {
       setLines((prev) => [...prev, value]);
       setIsAnimating(false);
     }, 1400);
-  };
+  }, [isAnimating, lines.length]);
+
+  // Keyboard shortcut listener for space/enter keys
+  useEffect(() => {
+    if (mode !== 'ritual' || lines.length >= 6) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.code === 'Space' || event.code === 'Enter') {
+        event.preventDefault();
+        handleToss();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [mode, lines.length, handleToss]);
 
   const structure = linesToStructure(lines);
 
@@ -87,15 +104,17 @@ export function ShakePage() {
             {[...Array(6)].map((_, i) => (
               <div
                 key={i}
-                className={`w-12 h-1 rounded-full transition-colors ${
-                  i < lines.length ? 'bg-terracotta' : 'bg-border'
+                className={`w-12 h-1.5 rounded-full transition-all duration-300 ${
+                  i < lines.length
+                    ? 'bg-gold shadow-[0_0_8px_rgba(223,177,91,0.5)]'
+                    : 'bg-border/60'
                 }`}
               />
             ))}
           </div>
 
           {/* Hexagram Display */}
-          <div className="bg-cream-light rounded-3xl border border-border p-8 flex flex-col items-center space-y-8">
+          <div className="bg-cream-light/60 backdrop-blur-md rounded-3xl border border-border p-8 flex flex-col items-center space-y-8">
             {structure && (
               <HexagramDisplay
                 structure={structure}
@@ -111,40 +130,48 @@ export function ShakePage() {
                   coins={coins}
                 />
 
-                <Button
-                  onClick={handleToss}
-                  disabled={isAnimating}
-                  variant="primary"
-                  size="lg"
-                >
-                  {isAnimating ? '投掷中...' : '投掷铜钱'}
-                </Button>
+                <div className="flex flex-col items-center gap-2">
+                  <Button
+                    onClick={handleToss}
+                    disabled={isAnimating}
+                    variant="primary"
+                    size="lg"
+                  >
+                    {isAnimating ? '正在摇卦...' : '摇卦投币'}
+                  </Button>
+                  <p className="text-[11px] text-muted font-sans font-light mt-1">
+                    💡 您也可以直接按 <kbd className="px-1.5 py-0.5 rounded bg-cream border border-border text-[10px]">空格键</kbd> 或 <kbd className="px-1.5 py-0.5 rounded bg-cream border border-border text-[10px]">回车键</kbd> 进行投掷
+                  </p>
+                </div>
               </div>
             )}
 
             {/* Lines Generated */}
             {lines.length > 0 && (
-              <div className="w-full pt-4 border-t border-border">
+              <div className="w-full pt-6 border-t border-border/80">
                 <div className="space-y-2">
                   {lines.map((line, index) => {
-                    // 根据爻值显示符号
                     const getLineSymbol = (value: number) => {
-                      if (value === 9) return '━━━  '; // 老阳（变爻）
-                      if (value === 7) return '━━━  '; // 少阳
-                      if (value === 6) return '━  ━ '; // 老阴（变爻）
-                      if (value === 8) return '━  ━ '; // 少阴
+                      if (value === 9) return '━━━ ◯'; // 老阳（变爻）
+                      if (value === 7) return '━━━';    // 少阳
+                      if (value === 6) return '━ ━ ✕'; // 老阴（变爻）
+                      if (value === 8) return '━ ━';    // 少阴
                       return '';
                     };
+
+                    const isChanging = line === 6 || line === 9;
 
                     return (
                       <div
                         key={index}
-                        className="flex justify-between items-center text-sm"
+                        className="flex justify-between items-center text-xs font-sans"
                       >
-                        <span className="text-muted font-light">第 {index + 1} 爻：</span>
-                        <div className="flex items-center gap-3">
-                          <span className="font-mono text-lg">{getLineSymbol(line)}</span>
-                          <span className={`${line === 6 || line === 9 ? 'text-terracotta font-medium' : 'text-ink font-light'}`}>
+                        <span className="text-muted font-light">初至上第 {index + 1} 爻：</span>
+                        <div className="flex items-center gap-4">
+                          <span className={`font-mono text-base tracking-wider ${isChanging ? 'text-terracotta' : 'text-gold/80'}`}>
+                            {getLineSymbol(line)}
+                          </span>
+                          <span className={`${isChanging ? 'text-terracotta font-medium' : 'text-ink font-light'}`}>
                             {getLineName(line)}
                           </span>
                         </div>

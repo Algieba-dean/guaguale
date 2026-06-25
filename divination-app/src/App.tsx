@@ -6,13 +6,15 @@ import { LiuyaoPage } from './features/liuyao/LiuyaoPage';
 import { MeihuaPage } from './features/meihua/MeihuaPage';
 import { ZiweiPage } from './features/ziwei/ZiweiPage';
 import { HistoryPage } from './features/history/HistoryPage';
+import { BackgroundDecoration } from './components/shared/BackgroundDecoration';
 
 function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-cream text-ink relative z-10">
+        <BackgroundDecoration />
         <Header />
-        <main className="flex-1 pb-20 md:pb-0">
+        <main className="flex-1 pb-20 md:pb-0 relative z-20">
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/liuyao/*" element={<LiuyaoPage />} />

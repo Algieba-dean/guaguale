@@ -1,3 +1,5 @@
+import { Solar } from 'lunar-javascript';
+
 /**
  * 梅花易数计算工具
  * Meihua Yishu (Plum Blossom Numerology) calculation utilities
@@ -29,6 +31,7 @@ export interface MeihuaResult {
       month: number;
       day: number;
       hour: number;
+      lunarStr?: string;
     };
   };
 }
@@ -90,21 +93,44 @@ export function timeToHexagram(
   day: number,
   hour: number
 ): MeihuaResult {
-  // 年月日相加得上卦数
-  const upperNum = ((year + month + day - 1) % 8) + 1;
+  // 1. 将公历时间转换为农历
+  const solar = Solar.fromYmdHms(year, month, day, hour, 0, 0);
+  const lunar = solar.getLunar();
 
-  // 年月日加时辰得下卦数
-  const hourPeriod = Math.floor(hour / 2); // 转换为12时辰制 (0-11)
-  const lowerNum = ((year + month + day + hourPeriod - 1) % 8) + 1;
+  // 2. 获取农历年、月、日、时参数
+  // 年数：地支索引 (子=1, 丑=2, ..., 亥=12)
+  const yearZhi = lunar.getYearZhi();
+  const zhiList = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+  const yearNum = zhiList.indexOf(yearZhi) + 1;
 
-  // 年月日时相加得动爻
-  const changingLine = ((year + month + day + hourPeriod - 1) % 6) + 1;
+  // 月数：农历月份 (1-12)
+  const monthNum = Math.abs(lunar.getMonth());
+
+  // 日数：农历日期 (1-30)
+  const dayNum = lunar.getDay();
+
+  // 时数：时辰地支索引 (子=1, 丑=2, ..., 亥=12)
+  const hourPeriod = Math.floor((hour + 1) / 2) % 12; // 0 to 11 (子=0, 丑=1, ..., 亥=11)
+  const hourNum = hourPeriod + 1; // 1 to 12
+
+  // 3. 计算梅花易数卦象数
+  // 上卦：(年 + 月 + 日) % 8
+  const upperNum = ((yearNum + monthNum + dayNum - 1) % 8) + 1;
+
+  // 下卦：(年 + 月 + 日 + 时) % 8
+  const lowerNum = ((yearNum + monthNum + dayNum + hourNum - 1) % 8) + 1;
+
+  // 动爻：(年 + 月 + 日 + 时) % 6
+  const changingLine = ((yearNum + monthNum + dayNum + hourNum - 1) % 6) + 1;
 
   const upperTrigram = TRIGRAM_MAP[upperNum];
   const lowerTrigram = TRIGRAM_MAP[lowerNum];
 
   const hexagramStructure = buildHexagramStructure(upperTrigram, lowerTrigram);
   const transformedStructure = applyChangingLine(hexagramStructure, changingLine);
+
+  // 格式化农历展示字符串
+  const lunarStr = `农历 ${lunar.getYearInGanZhi()}年 ${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}日 ${lunar.getTimeZhi()}时`;
 
   return {
     upperTrigram,
@@ -119,6 +145,7 @@ export function timeToHexagram(
         month,
         day,
         hour,
+        lunarStr,
       },
     },
   };
