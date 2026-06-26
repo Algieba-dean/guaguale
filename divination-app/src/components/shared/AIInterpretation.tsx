@@ -6,6 +6,28 @@ interface AIInterpretationProps {
   data: any;
 }
 
+const hasPendingQuestions = (text: string | null): boolean => {
+  if (!text) return false;
+  const keyword = '待补充与不确定信息';
+  const altKeyword = '待补充';
+  if (!text.includes(keyword) && !text.includes(altKeyword)) return false;
+
+  const index = text.indexOf(keyword) !== -1 ? text.indexOf(keyword) : text.indexOf(altKeyword);
+  const afterText = text.substring(index).toLowerCase();
+
+  const slice = afterText.slice(0, 100);
+  if (
+    slice.includes('暂无') ||
+    slice.includes('：无') ||
+    slice.includes(': 无') ||
+    slice.includes('无待补充') ||
+    slice.includes('无需额外背景')
+  ) {
+    return false;
+  }
+  return true;
+};
+
 export function AIInterpretation({ type, data }: AIInterpretationProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,6 +109,14 @@ export function AIInterpretation({ type, data }: AIInterpretationProps) {
   useEffect(() => {
     fetchInterpretation();
   }, [fetchInterpretation]);
+
+  // Clear secondary communication fields if they are no longer needed
+  useEffect(() => {
+    if (result && !hasPendingQuestions(result)) {
+      setAdditionalContext('');
+      setSubmittedContext('');
+    }
+  }, [result]);
 
   // Simple Markdown Parser to avoid external dependencies
   const renderContent = (text: string) => {
@@ -201,8 +231,8 @@ export function AIInterpretation({ type, data }: AIInterpretationProps) {
         </div>
       )}
 
-      {/* Secondary communication input - always visible once we have an initial result */}
-      {result && !error && (
+      {/* Secondary communication input - only visible when AI has pending questions */}
+      {result && !error && hasPendingQuestions(result) && (
         <div className="border-t border-border/30 pt-6 mt-6 space-y-4">
           <div className="space-y-1.5">
             <h4 className="text-sm font-serif text-ink tracking-wide flex items-center gap-1.5">
