@@ -319,7 +319,7 @@ export function ResultPage() {
               onClick={() => setShareModalOpen(true)}
               variant="secondary"
             >
-              🌌 分享海报
+              🌌 分享结果
             </Button>
             <Button
               onClick={() => navigate('/liuyao')}

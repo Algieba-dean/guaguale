@@ -549,7 +549,7 @@ export function ZiweiPage() {
                   variant="secondary"
                   className="flex-1"
                 >
-                  🌌 分享海报
+                  🌌 分享结果
                 </Button>
                 <Button
                   onClick={() => {

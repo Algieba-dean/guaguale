@@ -1,9 +1,40 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
 import QRCode from 'qrcode';
-import { HexagramDisplay } from './HexagramDisplay';
 import { linesToStructure } from '../../utils/hexagram';
 import { calculateLiuyaoLayout } from '../../utils/liuyaoLayout';
+
+const SITE_URL = 'https://xgt.algieba12.cn/';
+
+// ── Poster-only hexagram glyph (pure inline styles, no Tailwind/oklch) ─────
+function PosterHexagram({ structure, changingLines = [] }: { structure: string; changingLines?: number[] }) {
+  if (structure.length !== 6) return null;
+  const lines = structure.split('');
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', alignItems: 'center' }}>
+      {lines.map((line, index) => {
+        const position = 6 - index;
+        const isChanging = changingLines.includes(position);
+        const isYang = line === '1';
+        const color = isChanging ? '#B33925' : (isYang ? '#DFB15B' : '#6B6155');
+
+        return (
+          <div key={index} style={{ width: '56px', height: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {isYang ? (
+              <div style={{ width: '100%', height: '5px', backgroundColor: color, borderRadius: '1px' }} />
+            ) : (
+              <div style={{ width: '100%', display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                <div style={{ flex: 1, height: '5px', backgroundColor: color, borderRadius: '1px' }} />
+                <div style={{ flex: 1, height: '5px', backgroundColor: color, borderRadius: '1px' }} />
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 interface SharePosterModalProps {
   isOpen: boolean;
@@ -13,37 +44,82 @@ interface SharePosterModalProps {
   aiResult: string | null;
 }
 
-// Extract summary from AI markdown result
+// ── Extract key sections from AI markdown result ───────────────────────────
 const extractSummary = (text: string | null, type: string): string => {
   if (!text) return '卦象初成，玄机在心。静心体悟，趋吉避凶。';
   
   if (type === 'liuyao') {
-    // Try to match "摊主一句话"
     const match = text.match(/### 💬 摊主一句话[^\n]*\n([\s\S]*?)(?=\n###|$)/);
     if (match && match[1]) {
-      return match[1].replace(/\*\*/g, '').replace(/-\s*/g, '').trim();
+      return match[1].replace(/\*\*/g, '').replace(/-\s*/g, '').trim().slice(0, 200);
     }
-    // Fallback: match "占断结论"
     const conclMatch = text.match(/\*\*占断结论\*\*：(.*)/);
     if (conclMatch) {
       return `摊主占断：${conclMatch[1].trim()}`;
     }
-  } else {
-    // meihua or ziwei
-    const match = text.match(/### 🎯 摊主看这卦[^\n]*\n([\s\S]*?)(?=\n###|$)/) ||
-                  text.match(/### 🎯 摊主看这命盘[^\n]*\n([\s\S]*?)(?=\n###|$)/);
+  } else if (type === 'meihua') {
+    const match = text.match(/### 🎯 摊主看这[^\n]*\n([\s\S]*?)(?=\n###|$)/);
     if (match && match[1]) {
-      return match[1].replace(/\*\*/g, '').replace(/-\s*/g, '').trim();
+      return match[1].replace(/\*\*/g, '').replace(/-\s*/g, '').trim().slice(0, 200);
+    }
+  } else {
+    // ziwei
+    const match = text.match(/### 🎯 摊主看这[^\n]*\n([\s\S]*?)(?=\n###|$)/);
+    if (match && match[1]) {
+      return match[1].replace(/\*\*/g, '').replace(/-\s*/g, '').trim().slice(0, 200);
     }
   }
 
-  // General fallback: clean Markdown headings/bold and trim
   const clean = text
     .replace(/###.*?\n/g, '')
     .replace(/\*\*.*?\*\*/g, (m) => m.replace(/\*\*/g, ''))
     .replace(/-\s+/g, '')
     .trim();
-  return clean.slice(0, 110) + (clean.length > 110 ? '...' : '');
+  return clean.slice(0, 200) + (clean.length > 200 ? '...' : '');
+};
+
+// Extract conclusion fields for Liuyao
+const extractLiuyaoConclusion = (text: string | null): { conclusion: string; confidence: string; timing: string } | null => {
+  if (!text) return null;
+  const match = text.match(/### 🎯 摊主结论卡片[^\n]*\n([\s\S]*?)(?=\n###|$)/);
+  if (!match || !match[1]) return null;
+
+  const content = match[1];
+  const conclusionMatch = content.match(/\*\*占断结论\*\*：([^\n]*)/) || content.match(/\*\*占断结论\*\*:\s*([^\n]*)/);
+  const confidenceMatch = content.match(/\*\*置信程度\*\*：([^\n]*)/) || content.match(/\*\*置信程度\*\*:\s*([^\n]*)/);
+  const timingMatch = content.match(/\*\*应期提示\*\*：([^\n]*)/) || content.match(/\*\*应期提示\*\*:\s*([^\n]*)/);
+
+  return {
+    conclusion: conclusionMatch ? conclusionMatch[1].replace(/\*\*/g, '').trim() : '',
+    confidence: confidenceMatch ? confidenceMatch[1].replace(/\*\*/g, '').trim() : '',
+    timing: timingMatch ? timingMatch[1].replace(/\*\*/g, '').trim() : '',
+  };
+};
+
+// Extract extra detail paragraphs from AI result for a richer poster
+const extractDetailSections = (text: string | null): string[] => {
+  if (!text) return [];
+  const sections: string[] = [];
+
+  // Try to extract "详细说/依据" or "建议" sections
+  const patterns = [
+    /### .*?(?:详细|依据|链路|分析|核心)[^\n]*\n([\s\S]*?)(?=\n###|$)/,
+    /### .*?(?:建议|趋避|提醒|忠告)[^\n]*\n([\s\S]*?)(?=\n###|$)/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match && match[1]) {
+      const cleaned = match[1]
+        .replace(/\*\*/g, '')
+        .replace(/-\s+/g, '')
+        .trim();
+      if (cleaned.length > 10) {
+        sections.push(cleaned.slice(0, 160) + (cleaned.length > 160 ? '...' : ''));
+      }
+    }
+  }
+  return sections.slice(0, 2);
 };
 
 export function SharePosterModal({ isOpen, onClose, type, data, aiResult }: SharePosterModalProps) {
@@ -51,57 +127,101 @@ export function SharePosterModal({ isOpen, onClose, type, data, aiResult }: Shar
   const [rendering, setRendering] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   const posterRef = useRef<HTMLDivElement>(null);
+  const canShare = typeof navigator !== 'undefined' && !!navigator.share;
 
-  // Generate QR code for current site URL
+  // Generate QR code for site URL
   useEffect(() => {
-    if (!isOpen) return;
-    const siteUrl = window.location.origin;
-    QRCode.toDataURL(siteUrl, {
-      width: 120,
+    QRCode.toDataURL(SITE_URL, {
+      width: 240,
       margin: 1,
       color: { dark: '#0B0C10', light: '#FFFFFF' },
       errorCorrectionLevel: 'M',
     })
       .then((url) => setQrCodeUrl(url))
       .catch((err) => console.error('QR generation failed:', err));
-  }, [isOpen]);
+  }, []);
 
-  // Generate poster image when modal opens (wait for QR code to be ready)
+  // Render the poster when modal opens + QR ready
+  const generatePoster = useCallback(() => {
+    if (!posterRef.current || !qrCodeUrl) return;
+    setRendering(true);
+    setImgUrl(null);
+
+    // Wait for DOM paint + QR image load
+    requestAnimationFrame(() => {
+      setTimeout(async () => {
+        if (!posterRef.current) return;
+        const node = posterRef.current;
+        try {
+          // Use html-to-image as primary method since it's extremely fast and robust for offscreen
+          const dataUrl = await toPng(node, {
+            backgroundColor: '#FAF8F5',
+            pixelRatio: 2,
+            width: 375,
+            height: node.scrollHeight,
+          });
+          setImgUrl(dataUrl);
+        } catch (err) {
+          console.error('Failed to generate poster with html-to-image, falling back to html2canvas:', err);
+          try {
+            const canvas = await html2canvas(node, {
+              scale: 2,
+              width: 375,
+              height: node.scrollHeight,
+              backgroundColor: '#FAF8F5',
+              useCORS: true,
+              logging: false,
+            });
+            setImgUrl(canvas.toDataURL('image/png'));
+          } catch (fallbackErr) {
+            console.error('Failed to generate poster with html2canvas fallback:', fallbackErr);
+          }
+        } finally {
+          setRendering(false);
+        }
+      }, 600);
+    });
+  }, [qrCodeUrl]);
+
   useEffect(() => {
+    if (isOpen && qrCodeUrl) {
+      generatePoster();
+    }
     if (!isOpen) {
       setImgUrl(null);
-      return;
     }
-    if (!qrCodeUrl) return; // wait for QR code
-
-    setRendering(true);
-    // Short delay to ensure DOM (including QR img) is rendered before html2canvas runs
-    const timer = setTimeout(() => {
-      if (posterRef.current) {
-        html2canvas(posterRef.current, {
-          useCORS: true,
-          allowTaint: true,
-          scale: 2, // Double scale for HD output
-          backgroundColor: '#FAF8F5',
-        })
-          .then((canvas) => {
-            const url = canvas.toDataURL('image/png');
-            setImgUrl(url);
-            setRendering(false);
-          })
-          .catch((err) => {
-            console.error('Failed to generate poster:', err);
-            setRendering(false);
-          });
-      }
-    }, 800);
-
-    return () => clearTimeout(timer);
-  }, [isOpen, type, data, aiResult, qrCodeUrl]);
+  }, [isOpen, qrCodeUrl, generatePoster]);
 
   if (!isOpen) return null;
 
-  // Handle direct download
+  // ── Helpers ────────────────────────────────────────────────────────────
+  const dataURLtoBlob = (dataurl: string): Blob => {
+    const arr = dataurl.split(',');
+    const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/png';
+    const bstr = atob(arr[1]);
+    const n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    for (let i = 0; i < n; i++) u8arr[i] = bstr.charCodeAt(i);
+    return new Blob([u8arr], { type: mime });
+  };
+
+  const handleShare = async () => {
+    if (!imgUrl) return;
+    try {
+      const blob = dataURLtoBlob(imgUrl);
+      const file = new File([blob], `小卦摊_${type}_${Date.now()}.png`, { type: 'image/png' });
+      await navigator.share({
+        title: '小卦摊 · 知命',
+        text: `我在「小卦摊」得了一卦，快来看看！\n${SITE_URL}`,
+        files: [file],
+      });
+    } catch (err: any) {
+      if (err.name !== 'AbortError') {
+        handleDownload();
+      }
+    }
+  };
+
   const handleDownload = () => {
     if (!imgUrl) return;
     const a = document.createElement('a');
@@ -112,135 +232,248 @@ export function SharePosterModal({ isOpen, onClose, type, data, aiResult }: Shar
     document.body.removeChild(a);
   };
 
-  // Helper variables for rendering classical elements
   const summaryText = extractSummary(aiResult, type);
+  const detailSections = extractDetailSections(aiResult);
 
-  // Render different layouts for types
-  const renderPosterContent = () => {
-    if (type === 'liuyao') {
-      const lData = data;
-      const hexStructure = linesToStructure(lData.lines || []);
-      const changingLines = lData.changingLines || [];
-      const hasTransformed = lData.transformedHexagram;
-      const transStructure = linesToStructure((lData.lines || []).map((v: number) => {
-        if (v === 9) return 8;
-        if (v === 6) return 7;
-        return v;
-      }));
+  // ── Type label for header badge ─────────────────────────────────────────
+  const typeLabel = type === 'liuyao' ? '六爻占卜' : type === 'meihua' ? '梅花易数' : '紫微斗数';
+  const questionText = data.question || (type === 'ziwei' ? `${data.profile?.name}的紫微命盘` : '综合气运');
 
-      // Basic Ganzhi details
-      const layout = calculateLiuyaoLayout(lData.lines || [], lData.timestamp || Date.now());
+  // ── Poster Content Renderers ──────────────────────────────────────────
 
-      return (
-        <div className="space-y-6 flex-1 flex flex-col justify-between">
-          <div className="text-center space-y-1">
-            <p className="text-[10px] text-gold tracking-widest font-sans font-light">
-              干支：{layout.yearGanzhi}年 {layout.monthGanzhi}月 {layout.dayGanzhi}日 {layout.hourGanzhi}时
-            </p>
-            <p className="text-[10px] text-terracotta/75 tracking-wider font-sans font-light">
-              旬空：{layout.dayXunKong} · 宫位：{layout.palaceName}宫 ({layout.palaceElement})
-            </p>
-          </div>
+  const renderLiuyaoPoster = () => {
+    const lData = data;
+    const hexStructure = linesToStructure(lData.lines || []);
+    const changingLines = lData.changingLines || [];
+    const hasTransformed = lData.transformedHexagram;
+    const transStructure = linesToStructure((lData.lines || []).map((v: number) => {
+      if (v === 9) return 8;
+      if (v === 6) return 7;
+      return v;
+    }));
+    const layout = calculateLiuyaoLayout(lData.lines || [], lData.timestamp || Date.now());
 
-          {/* Hexagram displays symmetrically */}
-          <div className="flex justify-center items-center gap-10 my-2">
-            <div className="text-center space-y-1.5">
-              <span className="text-[9px] text-muted font-sans font-light uppercase tracking-wider block">本卦</span>
-              <div className="p-2 border border-border/25 rounded-xl bg-cream/10 inline-block scale-90">
-                <HexagramDisplay structure={hexStructure} changingLines={changingLines} size="sm" />
-              </div>
-              <h4 className="text-sm font-serif font-medium text-ink">
-                {lData.mainHexagram?.name}
-              </h4>
-            </div>
+    // Build six-line detail table
+    const najiaLines = layout.lines || [];
 
-            {hasTransformed && (
-              <>
-                <div className="text-gold opacity-45 text-xs font-serif font-light">之</div>
-                <div className="text-center space-y-1.5">
-                  <span className="text-[9px] text-muted font-sans font-light uppercase tracking-wider block">变卦</span>
-                  <div className="p-2 border border-border/25 rounded-xl bg-cream/10 inline-block scale-90">
-                    <HexagramDisplay structure={transStructure} changingLines={[]} size="sm" />
-                  </div>
-                  <h4 className="text-sm font-serif font-medium text-ink">
-                    {lData.transformedHexagram?.name}
-                  </h4>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      );
-    }
-
-    if (type === 'meihua') {
-      const mData = data;
-      return (
-        <div className="space-y-5 flex-1 flex flex-col justify-between">
-          <div className="text-center space-y-1">
-            <p className="text-[10px] text-gold tracking-widest font-sans font-light">
-              起卦：{mData.method === 'number' ? '易数心易起卦' : '时空演易起卦'}
-            </p>
-            <p className="text-[10px] text-muted font-sans font-light">
-              体卦：{mData.upperTrigram} · 用卦：{mData.lowerTrigram}
-            </p>
-          </div>
-
-          <div className="flex justify-center items-center gap-10 my-1">
-            <div className="text-center space-y-1">
-              <span className="text-[9px] text-muted font-sans font-light block">主卦</span>
-              <div className="p-2 border border-border/25 rounded-xl bg-cream/10 inline-block scale-90">
-                <HexagramDisplay structure={mData.hexagramStructure} size="sm" />
-              </div>
-              <h4 className="text-xs font-serif text-ink">{mData.mainHexagram.name}</h4>
-            </div>
-            {mData.transformedHexagram && (
-              <>
-                <div className="text-gold opacity-40 text-xs">之</div>
-                <div className="text-center space-y-1">
-                  <span className="text-[9px] text-muted font-sans font-light block">之卦</span>
-                  <div className="p-2 border border-border/25 rounded-xl bg-cream/10 inline-block scale-90">
-                    <HexagramDisplay structure={mData.transformedStructure} size="sm" />
-                  </div>
-                  <h4 className="text-xs font-serif text-ink">{mData.transformedHexagram.name}</h4>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      );
-    }
-
-    // ziwei
-    const zData = data;
     return (
-      <div className="space-y-4 flex-1 flex flex-col justify-between py-2">
-        <div className="border border-border/40 rounded-2xl p-4 bg-cream/15 space-y-2.5 text-xs text-ink font-light font-sans leading-relaxed">
-          <div className="grid grid-cols-2 gap-y-2 border-b border-border/30 pb-2">
-            <div>命主：<strong className="text-gold font-normal">{zData.profile.name}</strong></div>
-            <div>性别：{zData.profile.gender === 'male' ? '乾造 (男)' : '坤造 (女)'}</div>
-            <div className="col-span-2">诞辰：{zData.profile.birthDate} {zData.profile.birthHour.split(' ')[0]}</div>
+      <>
+        {/* Time & Space context */}
+        <div style={{ textAlign: 'center', marginBottom: '10px' }}>
+          <div style={{ fontSize: '10px', color: '#DFB15B', letterSpacing: '2px', marginBottom: '3px' }}>
+            {layout.yearGanzhi}年 {layout.monthGanzhi}月 {layout.dayGanzhi}日 {layout.hourGanzhi}时
           </div>
-          <div className="space-y-1 pt-1">
-            <div className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-gold" />
-              <span>命宫主星：<strong className="text-gold font-serif font-medium">{zData.mingGongData.majorStars.join('、')}</strong></span>
-            </div>
-            <p className="text-[10px] text-muted leading-relaxed">
-              格盘：{zData.mingGongData.desc}
-            </p>
+          <div style={{ fontSize: '9px', color: '#B33925', opacity: 0.8, letterSpacing: '1px' }}>
+            旬空：{layout.dayXunKong} · {layout.palaceName}宫 ({layout.palaceElement})
           </div>
         </div>
-      </div>
+
+        {/* Hexagram Visuals */}
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', gap: '24px', marginBottom: '10px' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '9px', color: '#6B6155', marginBottom: '6px', letterSpacing: '1px' }}>本 卦</div>
+            <div style={{ padding: '8px', border: '1px solid rgba(107,97,85,0.2)', borderRadius: '10px', display: 'inline-block', backgroundColor: 'rgba(250,248,245,0.6)' }}>
+              <PosterHexagram structure={hexStructure} changingLines={changingLines} />
+            </div>
+            <div style={{ fontSize: '14px', marginTop: '6px', color: '#1A1A1A', fontWeight: 600 }}>
+              {lData.mainHexagram?.unicode} {lData.mainHexagram?.name}
+            </div>
+          </div>
+          {hasTransformed && (
+            <>
+              <div style={{ color: '#DFB15B', opacity: 0.6, fontSize: '16px', paddingTop: '30px' }}>→</div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '9px', color: '#6B6155', marginBottom: '6px', letterSpacing: '1px' }}>变 卦</div>
+                <div style={{ padding: '8px', border: '1px solid rgba(107,97,85,0.2)', borderRadius: '10px', display: 'inline-block', backgroundColor: 'rgba(250,248,245,0.6)' }}>
+                  <PosterHexagram structure={transStructure} changingLines={[]} />
+                </div>
+                <div style={{ fontSize: '14px', marginTop: '6px', color: '#1A1A1A', fontWeight: 600 }}>
+                  {lData.transformedHexagram?.unicode} {lData.transformedHexagram?.name}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Najia line details – compact table */}
+        {najiaLines.length > 0 && (
+          <div style={{
+            border: '1px solid rgba(107,97,85,0.15)',
+            borderRadius: '10px',
+            overflow: 'hidden',
+            marginBottom: '8px',
+            fontSize: '9px',
+          }}>
+            {[...najiaLines].reverse().map((line, idx) => (
+              <div key={idx} style={{
+                display: 'flex',
+                alignItems: 'center',
+                padding: '3px 10px',
+                backgroundColor: idx % 2 === 0 ? 'rgba(223,177,91,0.04)' : 'transparent',
+                borderBottom: idx < najiaLines.length - 1 ? '1px solid rgba(107,97,85,0.08)' : 'none',
+                gap: '6px',
+              }}>
+                <span style={{ color: '#DFB15B', width: '24px', fontWeight: 600 }}>{line.beast}</span>
+                <span style={{ color: line.isChanging ? '#B33925' : '#6B6155', width: '24px' }}>{line.relation}</span>
+                <span style={{ color: '#1A1A1A', width: '32px', fontWeight: 500 }}>{line.branch}{line.element}</span>
+                <span style={{ color: line.lineType === 'yang' ? '#DFB15B' : '#6B6155', flex: 1 }}>
+                  {line.lineType === 'yang' ? '▬▬▬' : '▬ ▬'}
+                  {line.isChanging ? ' ○' : ''}
+                </span>
+                <span style={{ color: '#B33925', fontSize: '8px' }}>
+                  {line.isShi ? '世' : line.isYing ? '应' : ''}
+                  {line.isVoid ? ' 空' : ''}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Judgment text */}
+        {lData.mainHexagram?.judgment && (
+          <div style={{
+            fontSize: '10px',
+            color: '#1A1A1A',
+            lineHeight: 1.6,
+            padding: '8px 10px',
+            backgroundColor: 'rgba(223,177,91,0.06)',
+            borderRadius: '8px',
+            borderLeft: '3px solid #DFB15B',
+            marginBottom: '6px',
+          }}>
+            <div style={{ fontSize: '8px', color: '#DFB15B', letterSpacing: '2px', marginBottom: '3px', fontWeight: 600 }}>卦 辞</div>
+            <div style={{ fontWeight: 500 }}>{lData.mainHexagram.judgment.original}</div>
+            {lData.mainHexagram.judgment.translation && (
+              <div style={{ fontSize: '9px', color: '#6B6155', marginTop: '3px' }}>
+                {lData.mainHexagram.judgment.translation.slice(0, 100)}{lData.mainHexagram.judgment.translation.length > 100 ? '...' : ''}
+              </div>
+            )}
+          </div>
+        )}
+      </>
     );
   };
 
+  const renderMeihuaPoster = () => {
+    const mData = data;
+    return (
+      <>
+        {/* Method label */}
+        <div style={{ textAlign: 'center', marginBottom: '10px' }}>
+          <div style={{ fontSize: '10px', color: '#DFB15B', letterSpacing: '2px', marginBottom: '3px' }}>
+            {mData.method === 'number' ? '数字起卦' : '时间起卦'}
+          </div>
+          <div style={{ fontSize: '9px', color: '#6B6155' }}>
+            上卦：{mData.upperTrigram} · 下卦：{mData.lowerTrigram}
+          </div>
+        </div>
+
+        {/* Hexagram Visuals */}
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', gap: '24px', marginBottom: '10px' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '9px', color: '#6B6155', marginBottom: '6px', letterSpacing: '1px' }}>主 卦</div>
+            <div style={{ padding: '8px', border: '1px solid rgba(107,97,85,0.2)', borderRadius: '10px', display: 'inline-block', backgroundColor: 'rgba(250,248,245,0.6)' }}>
+              <PosterHexagram structure={mData.hexagramStructure} />
+            </div>
+            <div style={{ fontSize: '14px', marginTop: '6px', color: '#1A1A1A', fontWeight: 600 }}>
+              {mData.mainHexagram?.unicode} {mData.mainHexagram?.name}
+            </div>
+          </div>
+          {mData.transformedHexagram && (
+            <>
+              <div style={{ color: '#DFB15B', opacity: 0.6, fontSize: '16px', paddingTop: '30px' }}>→</div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '9px', color: '#6B6155', marginBottom: '6px', letterSpacing: '1px' }}>之 卦</div>
+                <div style={{ padding: '8px', border: '1px solid rgba(107,97,85,0.2)', borderRadius: '10px', display: 'inline-block', backgroundColor: 'rgba(250,248,245,0.6)' }}>
+                  <PosterHexagram structure={mData.transformedStructure} />
+                </div>
+                <div style={{ fontSize: '14px', marginTop: '6px', color: '#1A1A1A', fontWeight: 600 }}>
+                  {mData.transformedHexagram?.unicode} {mData.transformedHexagram?.name}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Judgment text */}
+        {mData.mainHexagram?.judgment && (
+          <div style={{
+            fontSize: '10px',
+            color: '#1A1A1A',
+            lineHeight: 1.6,
+            padding: '8px 10px',
+            backgroundColor: 'rgba(223,177,91,0.06)',
+            borderRadius: '8px',
+            borderLeft: '3px solid #DFB15B',
+            marginBottom: '6px',
+          }}>
+            <div style={{ fontSize: '8px', color: '#DFB15B', letterSpacing: '2px', marginBottom: '3px', fontWeight: 600 }}>卦 辞</div>
+            <div style={{ fontWeight: 500 }}>{mData.mainHexagram.judgment.original}</div>
+            {mData.mainHexagram.judgment.translation && (
+              <div style={{ fontSize: '9px', color: '#6B6155', marginTop: '3px' }}>
+                {mData.mainHexagram.judgment.translation.slice(0, 120)}{mData.mainHexagram.judgment.translation.length > 120 ? '...' : ''}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Changing line info */}
+        {mData.changingLine && (
+          <div style={{ fontSize: '9px', color: '#B33925', textAlign: 'center', opacity: 0.8 }}>
+            动爻：第{mData.changingLine}爻
+          </div>
+        )}
+      </>
+    );
+  };
+
+  const renderZiweiPoster = () => {
+    const zData = data;
+    return (
+      <>
+        <div style={{
+          border: '1px solid rgba(107,97,85,0.2)',
+          borderRadius: '12px',
+          padding: '14px',
+          fontSize: '11px',
+          color: '#1A1A1A',
+          lineHeight: 1.8,
+          marginBottom: '8px',
+          backgroundColor: 'rgba(250,248,245,0.5)',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+            <span>命主：<strong style={{ color: '#DFB15B' }}>{zData.profile?.name}</strong></span>
+            <span>{zData.profile?.gender === 'male' ? '乾造 (男)' : '坤造 (女)'}</span>
+          </div>
+          <div>诞辰：{zData.profile?.birthDate} {zData.profile?.birthHour?.split(' ')[0]}</div>
+          <div style={{ borderTop: '1px solid rgba(107,97,85,0.15)', marginTop: '8px', paddingTop: '8px' }}>
+            命宫主星：<strong style={{ color: '#DFB15B' }}>{zData.mingGongData?.majorStars?.join('、')}</strong>
+          </div>
+          {zData.mingGongData?.minorStars && zData.mingGongData.minorStars.length > 0 && (
+            <div style={{ fontSize: '10px', color: '#6B6155', marginTop: '2px' }}>
+              辅星：{zData.mingGongData.minorStars.slice(0, 4).join('、')}
+            </div>
+          )}
+        </div>
+      </>
+    );
+  };
+
+  const renderPosterContent = () => {
+    if (type === 'liuyao') return renderLiuyaoPoster();
+    if (type === 'meihua') return renderMeihuaPoster();
+    return renderZiweiPoster();
+  };
+
+  // ── Modal Title ─────────────────────────────────────────────────────────
+  const modalTitle = type === 'ziwei' ? '分享命盘' : '分享卦象';
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 backdrop-blur-sm p-4 animate-fadeIn">
-      {/* Real Display Modal Container */}
-      <div className="bg-cream-light border border-border rounded-3xl w-full max-w-sm overflow-hidden flex flex-col shadow-2xl relative">
-        <div className="p-5 border-b border-border/40 flex justify-between items-center bg-cream/20">
-          <h3 className="text-sm font-serif text-ink tracking-wide">分享优雅挂幅</h3>
+      {/* Modal Container */}
+      <div className="bg-cream-light border border-border rounded-3xl w-full max-w-sm overflow-hidden flex flex-col shadow-2xl relative max-h-[90vh]">
+        <div className="p-5 border-b border-border/40 flex justify-between items-center bg-cream/20 shrink-0">
+          <h3 className="text-sm font-serif text-ink tracking-wide">{modalTitle}</h3>
           <button
             onClick={onClose}
             className="text-muted hover:text-ink transition-colors w-7 h-7 rounded-full bg-border/20 flex items-center justify-center cursor-pointer text-xs"
@@ -250,42 +483,51 @@ export function SharePosterModal({ isOpen, onClose, type, data, aiResult }: Shar
         </div>
 
         {/* Poster preview / loading area */}
-        <div className="p-6 flex-1 flex flex-col items-center justify-center min-h-[360px] bg-cream/10">
+        <div className="p-4 flex-1 flex flex-col items-center justify-center min-h-[320px] bg-cream/10 overflow-y-auto">
           {rendering ? (
-            <div className="flex flex-col items-center space-y-3">
+            <div className="flex flex-col items-center space-y-3 py-12">
               <div className="relative w-9 h-9">
                 <div className="absolute inset-0 rounded-full border-2 border-gold/10 border-t-gold animate-spin" />
               </div>
               <p className="text-xs text-gold font-sans font-light tracking-widest animate-pulse">
-                正为您排定雅致海报...
+                正在生成分享图片...
+              </p>
+            </div>
+          ) : imgUrl ? (
+            <div className="space-y-3 w-full flex flex-col items-center">
+              <div className="border border-border/60 rounded-2xl overflow-hidden shadow-lg w-full max-w-[300px]">
+                <img
+                  src={imgUrl}
+                  alt="Divination Share Image"
+                  className="w-full h-auto"
+                />
+              </div>
+              <p className="text-[10px] text-muted font-sans font-light text-center">
+                💡 移动端可长按图片保存至相册
               </p>
             </div>
           ) : (
-            imgUrl && (
-              <div className="space-y-4 w-full flex flex-col items-center">
-                <div className="border border-border/60 rounded-2xl overflow-hidden shadow-lg max-h-[380px] w-auto aspect-[375/620]">
-                  <img
-                    src={imgUrl}
-                    alt="Divination Poster"
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-                <p className="text-[10px] text-muted font-sans font-light text-center">
-                  💡 移动端可长按图片直接保存至手机相册
-                </p>
-              </div>
-            )
+            <div className="flex flex-col items-center space-y-3 py-12">
+              <p className="text-xs text-muted font-sans font-light">图片生成中...</p>
+            </div>
           )}
         </div>
 
         {/* Bottom Actions */}
-        <div className="p-5 border-t border-border/40 flex gap-3 justify-center bg-cream/20 font-sans text-xs">
-          <button
-            onClick={onClose}
-            className="px-4 py-2.5 rounded-xl border border-border text-muted hover:border-gold/30 hover:text-gold transition-all cursor-pointer font-light bg-cream-light/50"
-          >
-            关闭
-          </button>
+        <div className="p-4 border-t border-border/40 flex gap-3 justify-center bg-cream/20 font-sans text-xs shrink-0">
+          {canShare && (
+            <button
+              disabled={rendering || !imgUrl}
+              onClick={handleShare}
+              className={`px-5 py-2.5 rounded-xl font-light tracking-wide transition-all duration-300 shadow-sm cursor-pointer ${
+                imgUrl
+                  ? 'bg-[#07C160] text-white hover:bg-[#06AD56]'
+                  : 'bg-border text-muted cursor-not-allowed'
+              }`}
+            >
+              📤 分享给好友
+            </button>
+          )}
           <button
             disabled={rendering || !imgUrl}
             onClick={handleDownload}
@@ -295,79 +537,247 @@ export function SharePosterModal({ isOpen, onClose, type, data, aiResult }: Shar
                 : 'bg-border text-muted cursor-not-allowed'
             }`}
           >
-            📥 下载海报
+            📥 保存图片
+          </button>
+          <button
+            onClick={onClose}
+            className="px-4 py-2.5 rounded-xl border border-border text-muted hover:border-gold/30 hover:text-gold transition-all cursor-pointer font-light bg-cream-light/50"
+          >
+            关闭
           </button>
         </div>
       </div>
 
-      {/* Hidden DOM Node for html2canvas to capture (Rendered off-screen) */}
-      <div className="absolute top-full left-full pointer-events-none overflow-hidden" style={{ width: 0, height: 0 }}>
+      {/* ── Off-screen poster DOM for html-to-image capture ──────────────── */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: 0,
+        height: 0,
+        overflow: 'hidden',
+        zIndex: -1000,
+        pointerEvents: 'none',
+      }}>
         <div
           ref={posterRef}
-          className="relative bg-[#FAF8F5] text-ink font-sans flex flex-col justify-between p-7 select-none border-[12px] border-[#DFB15B]/15"
+          data-poster="true"
           style={{
             width: '375px',
-            height: '620px',
+            minHeight: '640px',
+            backgroundColor: '#FAF8F5',
+            padding: '20px 22px',
             boxSizing: 'border-box',
+            fontFamily: '"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, -apple-system, sans-serif',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
           }}
         >
-          {/* Inner Golden border corners */}
-          <div className="absolute inset-2.5 border border-[#DFB15B]/30 pointer-events-none" />
-          <div className="absolute inset-3 border-[0.5px] border-[#DFB15B]/20 pointer-events-none" />
+          {/* Decorative outer border */}
+          <div style={{
+            position: 'absolute',
+            inset: '6px',
+            border: '2px solid rgba(223,177,91,0.15)',
+            pointerEvents: 'none',
+          }} />
+          <div style={{
+            position: 'absolute',
+            inset: '10px',
+            border: '1px solid rgba(223,177,91,0.10)',
+            pointerEvents: 'none',
+          }} />
 
-          {/* Poster Header */}
-          <div className="relative z-10 flex justify-between items-center border-b border-border/40 pb-3">
-            <div className="flex items-center gap-1.5">
-              <svg className="w-5 h-5 text-[#DFB15B]" viewBox="0 0 100 100">
+          {/* ── Header ─────────────────────────────────────────────────────── */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            borderBottom: '1px solid rgba(107,97,85,0.2)',
+            paddingBottom: '10px',
+            marginBottom: '12px',
+            position: 'relative',
+            zIndex: 10,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+              <svg style={{ width: '20px', height: '20px' }} viewBox="0 0 100 100">
                 <circle cx="50" cy="50" r="45" fill="#0B0C10" stroke="#DFB15B" strokeWidth="2"/>
                 <path d="M 50 5 A 22.5 22.5 0 0 0 50 50 A 22.5 22.5 0 0 1 50 95 A 45 45 0 0 1 50 5 Z" fill="#DFB15B" />
                 <circle cx="50" cy="27.5" r="6" fill="#DFB15B" />
                 <circle cx="50" cy="72.5" r="6" fill="#0B0C10" stroke="#DFB15B" strokeWidth="1.5" />
               </svg>
-              <span className="text-xs font-serif text-ink tracking-widest font-semibold">— 小卦摊 · 知命 —</span>
+              <span style={{ fontSize: '13px', color: '#1A1A1A', letterSpacing: '3px', fontWeight: 600 }}>小卦摊 · 知命</span>
             </div>
-            {/* Square stamp seal */}
-            <div className="w-6 h-6 border border-[#B33925] bg-[#B33925] text-white flex items-center justify-center font-serif text-[8px] font-bold rounded shadow-sm opacity-90 leading-none select-none">
-              知命
+            <div style={{
+              padding: '2px 8px',
+              border: '1px solid rgba(179,57,37,0.3)',
+              backgroundColor: 'rgba(179,57,37,0.08)',
+              color: '#B33925',
+              fontSize: '8px',
+              fontWeight: 600,
+              borderRadius: '4px',
+              letterSpacing: '1px',
+            }}>
+              {typeLabel}
             </div>
           </div>
 
-          {/* User query question */}
-          <div className="relative z-10 text-center my-4">
-            <span className="text-[9px] text-[#DFB15B] font-sans tracking-widest uppercase block mb-1">求占问事</span>
-            <p className="text-base font-serif font-medium text-ink italic leading-relaxed px-4">
-              “ {data.question || (type === 'ziwei' ? `${data.profile?.name}的紫微命盘` : '综合气运')} ”
-            </p>
+          {/* ── Question / Subject ─────────────────────────────────────────── */}
+          <div style={{ textAlign: 'center', marginBottom: '14px', position: 'relative', zIndex: 10 }}>
+            <div style={{ fontSize: '9px', color: '#DFB15B', letterSpacing: '4px', marginBottom: '5px', fontWeight: 500 }}>
+              {type === 'ziwei' ? '命 主 排 盘' : '求 占 问 事'}
+            </div>
+            <div style={{
+              fontSize: '14px',
+              fontWeight: 500,
+              color: '#1A1A1A',
+              padding: '6px 16px',
+              lineHeight: 1.6,
+              backgroundColor: 'rgba(223,177,91,0.06)',
+              borderRadius: '8px',
+              display: 'inline-block',
+              maxWidth: '280px',
+              wordBreak: 'break-all' as const,
+            }}>
+              「{questionText}」
+            </div>
           </div>
 
-          {/* Divination specific details */}
-          <div className="relative z-10 flex-1 flex flex-col justify-center">
+          {/* ── Divination Content ─────────────────────────────────────────── */}
+          <div style={{ position: 'relative', zIndex: 10, flex: 1 }}>
             {renderPosterContent()}
           </div>
 
-          {/* AI core summary block */}
-          <div className="relative z-10 border border-[#DFB15B]/20 rounded-2xl p-4 bg-[#FAF8F5]/80 shadow-sm my-4">
-            {/* Stamp label */}
-            <span className="absolute -top-2.5 left-4 px-2 bg-[#FAF8F5] text-[#B33925] text-[9px] font-serif tracking-widest font-medium border border-[#B33925]/20 rounded">
+          {/* ── Liuyao Conclusion Card ─────────────────────────────────────── */}
+          {type === 'liuyao' && (() => {
+            const concl = extractLiuyaoConclusion(aiResult);
+            if (!concl || (!concl.conclusion && !concl.confidence && !concl.timing)) return null;
+            return (
+              <div style={{
+                border: '1px solid rgba(179,57,37,0.25)',
+                borderRadius: '10px',
+                padding: '8px 10px',
+                backgroundColor: 'rgba(179,57,37,0.04)',
+                marginBottom: '8px',
+                fontSize: '9px',
+                color: '#1A1A1A',
+                lineHeight: 1.5,
+                position: 'relative',
+                zIndex: 10,
+              }}>
+                {concl.conclusion && (
+                  <div style={{ display: 'flex', marginBottom: '3px' }}>
+                    <span style={{ color: '#B33925', fontWeight: 600, width: '56px', flexShrink: 0 }}>占断结论：</span>
+                    <span style={{ fontWeight: 600 }}>{concl.conclusion}</span>
+                  </div>
+                )}
+                {concl.confidence && (
+                  <div style={{ display: 'flex', marginBottom: '3px' }}>
+                    <span style={{ color: '#6B6155', fontWeight: 600, width: '56px', flexShrink: 0 }}>置信程度：</span>
+                    <span>{concl.confidence}</span>
+                  </div>
+                )}
+                {concl.timing && (
+                  <div style={{ display: 'flex' }}>
+                    <span style={{ color: '#DFB15B', fontWeight: 600, width: '56px', flexShrink: 0 }}>应期提示：</span>
+                    <span>{concl.timing}</span>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
+          {/* ── AI Summary (摊主一语) ──────────────────────────────────────── */}
+          <div style={{
+            border: '1px solid rgba(223,177,91,0.2)',
+            borderRadius: '12px',
+            padding: '12px 14px',
+            margin: '10px 0',
+            position: 'relative',
+            zIndex: 10,
+            backgroundColor: 'rgba(250,248,245,0.8)',
+          }}>
+            <span style={{
+              position: 'absolute',
+              top: '-8px',
+              left: '14px',
+              padding: '1px 8px',
+              backgroundColor: '#FAF8F5',
+              color: '#B33925',
+              fontSize: '9px',
+              letterSpacing: '2px',
+              fontWeight: 600,
+              border: '1px solid rgba(179,57,37,0.15)',
+              borderRadius: '4px',
+            }}>
               摊主一语
             </span>
-            <p className="text-[11px] text-ink/80 font-sans font-light leading-relaxed text-justify mt-1">
+            <p style={{
+              fontSize: '10px',
+              color: 'rgba(26,26,26,0.85)',
+              lineHeight: 1.8,
+              textAlign: 'justify' as const,
+              marginTop: '4px',
+              marginBottom: '0',
+            }}>
               {summaryText}
             </p>
           </div>
 
-          {/* Footer branding */}
-          <div className="relative z-10 border-t border-border/40 pt-3 flex justify-between items-center text-[9px] text-muted/70 font-sans font-light">
-            <div className="space-y-0.5">
-              <p className="text-ink/60 font-serif">小卦摊 · 易数变化在乎一心</p>
-              <p className="opacity-80">扫码体验「小卦摊」→</p>
+          {/* ── Detail Sections (optional) ──────────────────────────────────── */}
+          {detailSections.length > 0 && (
+            <div style={{
+              padding: '0 2px',
+              marginBottom: '6px',
+              position: 'relative',
+              zIndex: 10,
+            }}>
+              {detailSections.map((section, idx) => (
+                <p key={idx} style={{
+                  fontSize: '9px',
+                  color: 'rgba(107,97,85,0.8)',
+                  lineHeight: 1.7,
+                  textAlign: 'justify' as const,
+                  margin: '4px 0',
+                  paddingLeft: '8px',
+                  borderLeft: '2px solid rgba(223,177,91,0.2)',
+                }}>
+                  {section}
+                </p>
+              ))}
             </div>
-            {/* Real QR code linking to current site */}
-            <div className="w-12 h-12 border border-[#DFB15B]/30 p-0.5 rounded bg-white flex items-center justify-center">
-              {qrCodeUrl ? (
-                <img src={qrCodeUrl} alt="QR" className="w-full h-full rounded" />
-              ) : (
-                <div className="w-full h-full bg-border/10 rounded" />
+          )}
+
+          {/* ── Footer with QR Code ────────────────────────────────────────── */}
+          <div style={{
+            borderTop: '1px solid rgba(107,97,85,0.2)',
+            paddingTop: '10px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            position: 'relative',
+            zIndex: 10,
+            marginTop: 'auto',
+          }}>
+            <div>
+              <div style={{ fontSize: '10px', color: 'rgba(26,26,26,0.6)', fontWeight: 500 }}>小卦摊 · 易数变化在乎一心</div>
+              <div style={{ fontSize: '9px', color: 'rgba(107,97,85,0.5)', marginTop: '3px' }}>扫码体验「小卦摊」→</div>
+              <div style={{ fontSize: '8px', color: 'rgba(107,97,85,0.35)', marginTop: '2px' }}>{SITE_URL}</div>
+            </div>
+            <div style={{
+              width: '58px',
+              height: '58px',
+              border: '1px solid rgba(223,177,91,0.3)',
+              borderRadius: '6px',
+              padding: '3px',
+              backgroundColor: '#fff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+            }}>
+              {qrCodeUrl && (
+                <img src={qrCodeUrl} alt="QR" style={{ width: '100%', height: '100%', borderRadius: '3px' }} />
               )}
             </div>
           </div>
