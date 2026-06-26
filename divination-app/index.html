@@ -12,13 +12,17 @@
     </script>
     <meta charset="UTF-8" />
     <script>
-      // Redirect to unified domain in production
+      // Redirect to unified domain in production, allowing localhost, 127.0.0.1, local network IPs, and *.local
       (function() {
         var targetDomain = 'xgt.algieba12.cn';
-        if (window.location.hostname !== targetDomain && 
-            window.location.hostname !== 'localhost' && 
-            window.location.hostname !== '127.0.0.1' &&
-            !window.location.hostname.endsWith('.local')) {
+        var host = window.location.hostname;
+        var isLocalIp = /^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(host);
+        
+        if (host !== targetDomain && 
+            host !== 'localhost' && 
+            host !== '127.0.0.1' &&
+            !isLocalIp &&
+            !host.endsWith('.local')) {
           window.location.replace('https://' + targetDomain + window.location.pathname + window.location.search + window.location.hash);
         }
       })();
