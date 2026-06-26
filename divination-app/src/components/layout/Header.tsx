@@ -16,6 +16,7 @@ export function Header() {
     { path: '/liuyao', label: '六爻占卜' },
     { path: '/meihua', label: '梅花易数' },
     { path: '/ziwei', label: '紫微斗数' },
+    { path: '/shaker', label: '快速摇签' },
     { path: '/history', label: '历史印记' }
   ];
 

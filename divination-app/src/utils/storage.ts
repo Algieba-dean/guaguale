@@ -5,7 +5,7 @@ const WARNING_THRESHOLD = 0.8; // 80% capacity
 export interface DivinationRecord {
   id: string;
   timestamp: number;
-  type: 'liuyao' | 'meihua' | 'ziwei';
+  type: 'liuyao' | 'meihua' | 'ziwei' | 'shaker';
   question?: string;
   data: {
     // Liuyao-specific
@@ -28,6 +28,14 @@ export interface DivinationRecord {
       gender: 'male' | 'female';
     };
     chartData?: any;
+
+    // Shaker-specific
+    shakerData?: {
+      poolName: string;
+      stickTitle: string;
+      stickFortune: string;
+      stickExplanation: string;
+    };
   };
   userNote?: string;
   accuracy?: boolean | null;

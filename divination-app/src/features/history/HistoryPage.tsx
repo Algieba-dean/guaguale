@@ -104,6 +104,10 @@ export function HistoryPage() {
       return '紫微斗数';
     }
 
+    if (record.type === 'shaker') {
+      return record.data.shakerData?.stickTitle || '快速求签';
+    }
+
     return '占卜记录';
   };
 
@@ -116,6 +120,9 @@ export function HistoryPage() {
     }
     if (record.type === 'ziwei') {
       return '紫微斗数';
+    }
+    if (record.type === 'shaker') {
+      return `摇签 · ${record.data.shakerData?.poolName || '快速决定'}`;
     }
     return '';
   };
@@ -307,6 +314,22 @@ function HistoryRecordCard({
       {/* Expanded Content */}
       {isExpanded && (
         <div className="px-6 pb-6 border-t border-border/80 space-y-6 pt-4 font-sans text-xs">
+          {/* Shaker stick details */}
+          {record.type === 'shaker' && record.data.shakerData && (
+            <div className="bg-cream-light/80 border border-border/70 p-4 rounded-2xl space-y-2 relative overflow-hidden font-sans">
+              <div className="absolute top-2 right-2 border border-dashed border-terracotta/20 text-terracotta/30 text-[8px] px-1 py-0.5 rounded-sm" style={{ writingMode: 'vertical-rl' }}>
+                小卦摊主印
+              </div>
+              <div className="flex justify-between items-center border-b border-border/30 pb-1.5 pr-8">
+                <span className="font-serif text-[13px] text-gold font-normal">求得签条：{record.data.shakerData.stickTitle}</span>
+                <span className="px-1.5 py-0.5 rounded bg-terracotta text-cream text-[9px] font-serif font-light">{record.data.shakerData.stickFortune}</span>
+              </div>
+              <p className="text-muted leading-relaxed font-light text-xs pt-1.5 text-justify">
+                {record.data.shakerData.stickExplanation}
+              </p>
+            </div>
+          )}
+
           {/* Accuracy Marking */}
           <div className="space-y-2">
             <p className="text-xs text-muted font-light">验证准确度（标记反馈）：</p>

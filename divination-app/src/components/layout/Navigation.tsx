@@ -47,6 +47,19 @@ export function Navigation() {
       )
     },
     {
+      path: '/shaker',
+      label: '摇签',
+      icon: (
+        <svg className="w-5.5 h-5.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <path d="M6 7 L7 17 C7 18 8 19 10 19 C12 19 13 18 13 17 L14 7 Z" />
+          <ellipse cx="10" cy="7" rx="4" ry="1.5" />
+          <line x1="8" y1="8" x2="6" y2="3.5" />
+          <line x1="10" y1="8" x2="10" y2="2.5" />
+          <line x1="12" y1="8" x2="14" y2="4" />
+        </svg>
+      )
+    },
+    {
       path: '/history',
       label: '历史',
       icon: (

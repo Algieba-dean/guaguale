@@ -4,6 +4,7 @@ interface UseDeviceShakeOptions {
   onShake: () => void;
   threshold?: number;
   enabled?: boolean;
+  cooldownMs?: number;
 }
 
 interface DeviceMotionEventConstructorWithPermission {
@@ -27,6 +28,7 @@ export function useDeviceShake({
   onShake,
   threshold = 15, // standard shake.js threshold
   enabled = true,
+  cooldownMs = 2000, // 2-second default cooldown to prevent double triggers
 }: UseDeviceShakeOptions) {
   const [permissionGranted, setPermissionGranted] = useState(false);
 
@@ -82,13 +84,23 @@ export function useDeviceShake({
 
     if (needsPermission && !permissionGranted) return;
 
-    const COOLDOWN_MS = 1200; // Slightly longer cooldown to avoid double triggers
     let lastX: number | null = null;
     let lastY: number | null = null;
     let lastZ: number | null = null;
     let lastTime = 0;
 
     const handleMotion = (event: DeviceMotionEvent) => {
+      // Reset baseline and return immediately if not enabled.
+      // This prevents processing events queued/delayed during animations
+      // and ensures a fresh baseline is established when enabled becomes true.
+      if (!enabledRef.current) {
+        lastTime = 0;
+        lastX = null;
+        lastY = null;
+        lastZ = null;
+        return;
+      }
+
       // Prefer acceleration (excludes gravity) if available
       const acc = event.acceleration || event.accelerationIncludingGravity;
       if (!acc) return;
@@ -120,7 +132,7 @@ export function useDeviceShake({
           // Only trigger if shaking is active, enabled is true, and cooldown passed
           if (enabledRef.current && totalChange >= threshold) {
             const now = Date.now();
-            if (now - lastTriggerRef.current >= COOLDOWN_MS) {
+            if (now - lastTriggerRef.current >= cooldownMs) {
               lastTriggerRef.current = now;
               onShakeRef.current();
             }
@@ -138,7 +150,7 @@ export function useDeviceShake({
     return () => {
       window.removeEventListener('devicemotion', handleMotion);
     };
-  }, [permissionGranted, threshold]); // Exclude enabledRef.current to keep listener bound
+  }, [permissionGranted, threshold, cooldownMs]); // Exclude enabledRef.current to keep listener bound
 
   return { requestPermission, permissionGranted };
 }

@@ -71,6 +71,19 @@ const ZiweiIcon = () => (
   </svg>
 );
 
+const ShakerIcon = () => (
+  <svg viewBox="0 0 100 100" className="w-16 h-16 text-gold group-hover:scale-105 transition-transform duration-500">
+    <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="0.75" className="opacity-30" />
+    {/* Traditional shaker cup */}
+    <path d="M 38 40 L 42 75 C 42 79 45 82 50 82 C 55 82 58 79 58 75 L 62 40 Z" fill="none" stroke="currentColor" strokeWidth="1.5" />
+    <ellipse cx="50" cy="40" rx="12" ry="4" fill="none" stroke="currentColor" strokeWidth="1.5" />
+    {/* Sticks inside */}
+    <line x1="45" y1="42" x2="40" y2="22" stroke="currentColor" strokeWidth="1.5" />
+    <line x1="50" y1="42" x2="50" y2="18" stroke="currentColor" strokeWidth="1.5" />
+    <line x1="55" y1="42" x2="60" y2="24" stroke="currentColor" strokeWidth="1.5" />
+  </svg>
+);
+
 export function HomePage() {
   const [historyCount, setHistoryCount] = useState(0);
   const [activeCard, setActiveCard] = useState(0);
@@ -130,6 +143,14 @@ export function HomePage() {
       description: '列曜定位以排命盘格局，天星推演以照平生之运。',
       icon: <ZiweiIcon />,
       borderGlow: 'hover:border-[#6B8AFD]/40 hover:shadow-[0_0_20px_rgba(107,138,253,0.08)]'
+    },
+    {
+      path: '/shaker',
+      title: '快速摇签',
+      titleEn: 'Stick Shaker',
+      description: '摇晃签筒以决行止之疑，趣味签面以定当下之选。',
+      icon: <ShakerIcon />,
+      borderGlow: 'hover:border-gold/40 hover:shadow-[0_0_20px_rgba(223,177,91,0.08)]'
     }
   ];
 
@@ -138,7 +159,7 @@ export function HomePage() {
       <div className="min-h-screen flex flex-col justify-center">
         {/* Hero Section */}
         <section className="flex-1 flex flex-col items-center justify-center px-4 py-8 md:py-20 relative">
-          <div className="max-w-4xl mx-auto text-center space-y-8 md:space-y-10 relative z-10 w-full">
+          <div className="max-w-6xl mx-auto text-center space-y-8 md:space-y-10 relative z-10 w-full">
             {/* Eyebrow badge */}
             <div className="inline-block px-5 py-1.5 rounded-full border border-gold/20 bg-gold-tint text-gold text-xs font-sans tracking-widest uppercase transition-all duration-300 hover:scale-105">
               ☯️ 传统易占 · 现代呈现 ☯️
@@ -155,7 +176,7 @@ export function HomePage() {
 
             {/* Description */}
             <p className="text-sm md:text-lg text-muted font-sans font-light max-w-2xl mx-auto leading-relaxed tracking-wider px-2">
-              借古老易理之光，照亮当下人生的抉择。三种中华传统起卦方式，在此融为现代科技的灵性慰藉。
+              借古老易理之光，照亮当下人生的抉择。多种中华传统起卦求签方式，在此融为现代科技的灵性慰藉。
             </p>
 
             {/* Method Cards - Carousel on mobile, grid on desktop */}
@@ -163,7 +184,7 @@ export function HomePage() {
               <div 
                 ref={scrollContainerRef}
                 onScroll={handleScroll}
-                className="flex md:grid md:grid-cols-3 gap-6 mt-10 md:mt-16 w-full overflow-x-auto snap-x snap-mandatory scrollbar-none pb-6 px-6 -mx-6 md:px-0 md:mx-0 md:overflow-visible"
+                className="flex md:grid md:grid-cols-2 lg:grid-cols-4 gap-6 mt-10 md:mt-16 w-full overflow-x-auto snap-x snap-mandatory scrollbar-none pb-6 px-6 -mx-6 md:px-0 md:mx-0 md:overflow-visible"
               >
                 {methods.map((method) => (
                   <Link
