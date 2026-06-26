@@ -18,9 +18,9 @@ import { NajiaTable } from '../../components/shared/NajiaTable';
 export function ResultPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const state = location.state as { question: string; lines: LineValue[] } | null;
+  const state = location.state as { question: string; lines: LineValue[]; timestamp?: number } | null;
   const [saved, setSaved] = useState(false);
-  const [timestamp] = useState(Date.now());
+  const [timestamp] = useState(state?.timestamp || Date.now());
 
   useEffect(() => {
     if (!state) {

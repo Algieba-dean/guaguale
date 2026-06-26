@@ -149,8 +149,11 @@ export function calculateLiuyaoLayout(lines: number[], timestamp: number = Date.
   const lowerBin = binStr.slice(0, 3);
   const upperBin = binStr.slice(3, 6);
   
-  const lowerTrigram = BINARY_TRIGRAM[lowerBin] || 'kun';
-  const upperTrigram = BINARY_TRIGRAM[upperBin] || 'kun';
+  // Lookups in BINARY_TRIGRAM map top-to-bottom binary keys, so we reverse the bottom-to-top sliced strings
+  const lowerLook = lowerBin.split('').reverse().join('');
+  const upperLook = upperBin.split('').reverse().join('');
+  const lowerTrigram = BINARY_TRIGRAM[lowerLook] || 'kun';
+  const upperTrigram = BINARY_TRIGRAM[upperLook] || 'kun';
 
   // 3. Determine Shi/Ying positions using Xunshi Ge
   const heavenSame = lowerBin[2] === upperBin[2]; // line 3 vs 6

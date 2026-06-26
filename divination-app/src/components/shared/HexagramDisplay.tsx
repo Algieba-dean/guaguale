@@ -19,8 +19,8 @@ export function HexagramDisplay({
 
   const styles = sizeStyles[size];
 
-  // Structure is from bottom to top, so reverse for display
-  const lines = structure.split('').reverse();
+  // Structure is from top to bottom (first char is line 6)
+  const lines = structure.split('');
 
   return (
     <div className={`flex flex-col ${styles.gap} items-center`}>

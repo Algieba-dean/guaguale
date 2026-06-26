@@ -58,9 +58,9 @@ export function getAllHexagrams(): Hexagram[] {
 export function linesToStructure(lines: number[]): string {
   if (lines.length !== 6) return '';
 
-  return lines.map(line => {
-    // 7 (young yang) and 9 (old yang) = 1
-    // 6 (old yin) and 8 (young yin) = 0
+  // Reverse lines to map from top (line 6 / index 5) to bottom (line 1 / index 0)
+  // so that character 0 matches line 6 and character 5 matches line 1
+  return [...lines].reverse().map(line => {
     return (line === 7 || line === 9) ? '1' : '0';
   }).join('');
 }
@@ -104,18 +104,15 @@ export function reconstructLiuyaoLines(mainHexagramId: number, changingLines: nu
   const hexagram = getHexagramById(mainHexagramId);
   if (!hexagram || !hexagram.structure) return [];
 
-  const structure = hexagram.structure; // e.g., "111111"
-  const lines: number[] = [];
+  const structure = hexagram.structure; // top-to-bottom (0 is line 6, 5 is line 1)
+  const lines: number[] = new Array(6);
   for (let i = 0; i < 6; i++) {
-    const pos = i + 1;
+    const pos = 6 - i; // line position 6 down to 1
     const isChanging = changingLines.includes(pos);
     const isYang = structure[i] === '1';
 
-    if (isYang) {
-      lines.push(isChanging ? 9 : 7);
-    } else {
-      lines.push(isChanging ? 6 : 8);
-    }
+    const val = isYang ? (isChanging ? 9 : 7) : (isChanging ? 6 : 8);
+    lines[pos - 1] = val; // place in 0-indexed array (pos 1 is index 0)
   }
   return lines;
 }

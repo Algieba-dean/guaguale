@@ -170,8 +170,8 @@ function buildHexagramStructure(upperTrigram: string, lowerTrigram: string): str
   const lower = trigramStructures[lowerTrigram];
   const upper = trigramStructures[upperTrigram];
 
-  // 下卦在下，上卦在上
-  return lower + upper;
+  // 上卦在上，下卦在下 (由上至下排列)
+  return upper + lower;
 }
 
 /**
@@ -181,8 +181,8 @@ function buildHexagramStructure(upperTrigram: string, lowerTrigram: string): str
  */
 function applyChangingLine(structure: string, changingLine: number): string {
   const lines = structure.split('');
-  // changingLine 从1开始，从下往上数
-  const index = changingLine - 1;
+  // structure 从上往下数 (index 0 是第6爻，index 5 是第1爻)
+  const index = 6 - changingLine;
   // 阴阳互变
   lines[index] = lines[index] === '1' ? '0' : '1';
   return lines.join('');
