@@ -91,65 +91,117 @@ export function QuestionPage() {
 
             {showManualForm && (
               <div className="pt-6 border-t border-border/80 space-y-5 text-left font-sans text-xs sm:text-sm">
-                <h3 className="text-sm font-serif text-ink font-normal border-b border-border/40 pb-2">
-                  手动排盘配置
+                <h3 className="text-sm font-serif text-ink font-normal border-b border-border/40 pb-2 flex items-center justify-between">
+                  <span>手动排盘配置</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setManualLines([7, 7, 7, 7, 7, 7]);
+                    }}
+                    className="text-[11px] text-muted hover:text-gold transition-colors font-sans font-light"
+                  >
+                    重置为全少阳
+                  </button>
                 </h3>
                 
                 {/* Divination Date & Time */}
                 <div className="space-y-1.5">
-                  <label className="block text-ink font-light">起卦时间 (选填，默认为当前时间)</label>
-                  <input
-                    type="datetime-local"
-                    value={manualDateTime}
-                    onChange={(e) => setManualDateTime(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-2xl border border-border bg-cream/40 text-ink focus:outline-none focus:ring-1 focus:ring-gold/40 focus:border-gold transition-all text-xs"
-                  />
+                  <label className="block text-ink font-light">起卦时间</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="datetime-local"
+                      value={manualDateTime}
+                      onChange={(e) => setManualDateTime(e.target.value)}
+                      className="flex-1 px-4 py-2.5 rounded-xl border border-border bg-cream/40 text-ink focus:outline-none focus:ring-1 focus:ring-gold/40 focus:border-gold transition-all text-xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const now = new Date();
+                        const offset = now.getTimezoneOffset() * 60000;
+                        const localISOTime = (new Date(now.getTime() - offset)).toISOString().slice(0, 16);
+                        setManualDateTime(localISOTime);
+                      }}
+                      className="px-3 py-2.5 rounded-xl border border-border hover:border-gold/30 hover:text-gold text-muted text-xs transition-all bg-cream/10 shrink-0 font-sans font-light"
+                    >
+                      使用当前时间
+                    </button>
+                  </div>
                 </div>
 
-                {/* 6 Lines Selection */}
+                {/* Visual Trigram/Hexagram Click Toggle Selector */}
                 <div className="space-y-3">
-                  <label className="block text-ink font-light">爻位自选 (自上而下选择爻象)</label>
-                  <div className="space-y-2">
-                    {[...Array(6)].map((_, i) => {
-                      const pos = 6 - i; // line position 6 down to 1
-                      const linesIdx = pos - 1;
-                      const currentValue = manualLines[linesIdx];
-                      
-                      const lineTypes = [
-                        { label: '少阳 ━━━', value: 7 },
-                        { label: '少阴 ━ ━', value: 8 },
-                        { label: '老阳 ━━━ ◯', value: 9 },
-                        { label: '老阴 ━ ━ ✕', value: 6 }
-                      ];
+                  <div className="flex items-center justify-between">
+                    <label className="block text-ink font-light">自选爻象 (点击爻线切换阴阳动静)</label>
+                    <span className="text-[10px] text-muted font-light">
+                      少阳 ➡️ 少阴 ➡️ 老阳 ➡️ 老阴
+                    </span>
+                  </div>
 
-                      return (
-                        <div key={pos} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/20 pb-2">
-                          <span className="text-[11px] text-muted font-serif font-light shrink-0 sm:w-16">
-                            第 {pos} 爻 ({pos === 6 ? '上爻' : pos === 1 ? '初爻' : `${pos}爻`})
-                          </span>
-                          <div className="grid grid-cols-2 xs:grid-cols-4 gap-1.5 flex-1">
-                            {lineTypes.map(t => (
-                              <button
-                                key={t.value}
-                                type="button"
-                                onClick={() => {
-                                  const updated = [...manualLines];
-                                  updated[linesIdx] = t.value;
-                                  setManualLines(updated);
-                                }}
-                                className={`px-1.5 py-1.5 rounded-xl text-[10px] text-center border font-sans font-light cursor-pointer transition-all ${
-                                  currentValue === t.value
-                                    ? 'bg-gold border-gold text-cream font-normal'
-                                    : 'border-border/60 text-muted hover:border-gold/30 hover:text-gold bg-cream/10'
-                                }`}
-                              >
-                                {t.label}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
+                  <div className="bg-cream/30 border border-border/40 rounded-2xl p-4 flex flex-col items-center justify-center">
+                    {/* Visual Hexagram Line Stack */}
+                    <div className="w-full max-w-[320px] flex flex-col space-y-2 my-2">
+                      {[...Array(6)].map((_, i) => {
+                        const pos = 6 - i; // line position 6 down to 1
+                        const linesIdx = pos - 1;
+                        const val = manualLines[linesIdx];
+                        
+                        // Line styles and text
+                        let symbolStr = '';
+                        let typeLabel = '';
+                        let colorClass = '';
+                        
+                        switch (val) {
+                          case 7: // 少阳
+                            symbolStr = '━━━━━━━━━━━━━━━';
+                            typeLabel = '少阳 (静)';
+                            colorClass = 'border-gold text-gold hover:bg-gold/5';
+                            break;
+                          case 8: // 少阴
+                            symbolStr = '━━━━━━   ━━━━━━';
+                            typeLabel = '少阴 (静)';
+                            colorClass = 'border-gold/60 text-gold/80 hover:bg-gold/5';
+                            break;
+                          case 9: // 老阳
+                            symbolStr = '━━━━━━━━━━━━━━━ ◯';
+                            typeLabel = '老阳 (动)';
+                            colorClass = 'border-terracotta text-terracotta hover:bg-terracotta/5';
+                            break;
+                          case 6: // 老阴
+                            symbolStr = '━━━━━━ ✕ ━━━━━━';
+                            typeLabel = '老阴 (动)';
+                            colorClass = 'border-terracotta/80 text-terracotta/90 hover:bg-terracotta/5';
+                            break;
+                        }
+
+                        // Cycle through values: 7 -> 8 -> 9 -> 6 -> 7
+                        const handleToggle = () => {
+                          const nextMap: Record<number, number> = { 7: 8, 8: 9, 9: 6, 6: 7 };
+                          const updated = [...manualLines];
+                          updated[linesIdx] = nextMap[val] || 7;
+                          setManualLines(updated);
+                        };
+
+                        return (
+                          <button
+                            key={pos}
+                            type="button"
+                            onClick={handleToggle}
+                            className={`w-full flex items-center justify-between px-4 py-2.5 border rounded-xl cursor-pointer transition-all ${colorClass}`}
+                          >
+                            <span className="font-serif text-xs font-light select-none w-12 text-left">
+                              {pos === 6 ? '上爻' : pos === 1 ? '初爻' : `${pos}爻`}
+                            </span>
+                            <span className="font-mono text-[14px] tracking-widest font-semibold flex-1 text-center select-none">
+                              {symbolStr}
+                            </span>
+                            <span className="text-[10px] w-14 text-right select-none font-light opacity-80">
+                              {typeLabel}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
 
