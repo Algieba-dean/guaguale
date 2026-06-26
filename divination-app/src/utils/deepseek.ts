@@ -132,15 +132,46 @@ ${changingLinesDesc}
       }).join('\n');
 
       prompt += `
-【专业纳甲排盘信息】
+【专业纳甲本卦排盘信息】
 起卦时间干支：${layout.yearGanzhi}年 ${layout.monthGanzhi}月 ${layout.dayGanzhi}日 ${layout.hourGanzhi}时
 日旬空亡：${layout.dayXunKong}
 本宫卦位：${layout.palaceName} (${layout.palaceElement}宫)${layout.isYouhun ? ' · 游魂卦' : ''}${layout.isGuihun ? ' · 归魂卦' : ''}
 世应位置：世爻在第 ${layout.shiPosition} 爻，应爻在第 ${layout.yingPosition} 爻
 各爻地支与六亲六神分布（自下而上）：
 ${lineDetails}
+`;
 
-请结合易经爻象、动爻与静爻的生克转换，并融合【专业纳甲排盘信息】中的日月五行生克、世应关系、旬空及月破/日破/暗动等要素，深度剖析事情的发展轨迹，针对用户询问的事情给出切实的行动警示与建议。
+      const hasChanging = lData.changingLines.length > 0;
+      if (hasChanging) {
+        const transLines = linesArray.map(v => {
+          if (v === 9) return 8;
+          if (v === 6) return 7;
+          return v;
+        });
+        const transLayout = calculateLiuyaoLayout(transLines, lData.timestamp);
+        
+        const transLineDetails = transLayout.lines.map(line => {
+          let statusStr = '';
+          if (line.isVoid) statusStr = ' (旬空)';
+          else if (line.isYuePo) statusStr = ' (月破)';
+          else if (line.isRiPo) statusStr = ' (日破)';
+          else if (line.isAnDong) statusStr = ' (暗动)';
+          
+          const shiYingStr = line.isShi ? ' [世爻]' : (line.isYing ? ' [应爻]' : '');
+          return `  第 ${line.position} 爻: ${line.beast} | ${line.relation} ${line.branch}${line.element} ${line.lineType === 'yang' ? '━━━' : '━ ━'}${shiYingStr}${statusStr}`;
+        }).join('\n');
+
+        prompt += `
+【专业纳甲变卦（之卦）排盘信息】
+之卦本宫卦位：${transLayout.palaceName} (${transLayout.palaceElement}宫)${transLayout.isYouhun ? ' · 游魂卦' : ''}${transLayout.isGuihun ? ' · 归魂卦' : ''}
+之卦世应位置：世爻在第 ${transLayout.shiPosition} 爻，应爻在第 ${transLayout.yingPosition} 爻
+之卦各爻地支与六亲（各自宫位五行独立推算，自下而上）：
+${transLineDetails}
+`;
+      }
+
+      prompt += `
+请结合易经爻象、动爻与静爻的生克转换，并融合【专业纳甲本卦排盘信息】和【专业纳甲变卦（之卦）排盘信息】中的日月五行生克、世应关系、旬空及月破/日破/暗动等要素，深度剖析事情的发展轨迹，针对用户询问的事情给出切实的行动警示与建议。
 `;
     } else {
       prompt += `

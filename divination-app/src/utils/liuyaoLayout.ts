@@ -119,7 +119,7 @@ function invertTrigram(name: string): string {
  * @param lines Array of 6 line values (6, 7, 8, 9) from bottom to top (index 0 is line 1)
  * @param timestamp Divination timestamp (default is now)
  */
-export function calculateLiuyaoLayout(lines: number[], timestamp: number = Date.now()): LiuyaoLayoutResult {
+export function calculateLiuyaoLayout(lines: number[], timestamp: number = Date.now(), mainPalaceElement?: string): LiuyaoLayoutResult {
   // 1. Get Ganzhi and Calendar parameters
   const date = new Date(timestamp);
   const solar = Solar.fromYmdHms(
@@ -208,7 +208,7 @@ export function calculateLiuyaoLayout(lines: number[], timestamp: number = Date.
     const element = BRANCH_WUXING[branch] || '土';
     
     // Six Relations (六亲)
-    const relation = getRelation(palaceElement, element);
+    const relation = getRelation(mainPalaceElement || palaceElement, element);
     
     // Six Beasts (六神)
     const beast = SHEN_ORDER[(beastStartIndex + idx) % 6];
