@@ -12,6 +12,10 @@ export function AIInterpretation({ type, data }: AIInterpretationProps) {
   const [result, setResult] = useState<string | null>(null);
   const [thinkingIndex, setThinkingIndex] = useState(0);
 
+  // States for secondary communication / context
+  const [additionalContext, setAdditionalContext] = useState('');
+  const [submittedContext, setSubmittedContext] = useState('');
+
   const thinkingPhrases = {
     liuyao: [
       '正在认真看你的卦象...',
@@ -22,7 +26,7 @@ export function AIInterpretation({ type, data }: AIInterpretationProps) {
     meihua: [
       '收到你的数据了，正在起卦...',
       '上卦下卦都排好了，正在分析...',
-      '体用关系和五行生克都理清了...',
+      '体用关系 and 五行生克都理清了...',
       '正在写解读，稍等一下...'
     ],
     ziwei: [
@@ -31,6 +35,24 @@ export function AIInterpretation({ type, data }: AIInterpretationProps) {
       '命宫主星和格局都看过了...',
       'AI 正在写分析报告...'
     ]
+  }[type];
+
+  const secondaryConfig = {
+    liuyao: {
+      title: '💬 二次沟通 / 补充占卜背景',
+      desc: '解卦师摊主在上面可能提出了待证实的问题。你可以在下方输入回答，或补充更多细节背景（如求问者目前的处境、发生的时间顺序、求问对象的态度等），从而重新推演卦象，获得更为精准的占断。',
+      placeholder: '例如：补充求问之事的具体起因、相关人员的性别与年龄、目前遇到的阻力，或回答摊主在解卦依据里提出的疑问...'
+    },
+    meihua: {
+      title: '💬 二次沟通 / 补充占卜背景',
+      desc: '解卦师摊主在上面可能提出了待证实的问题。你可以在下方输入回答，或补充更多细节背景（如求问者的当前现状、所见外应等），从而重新推演卦象，获得更为精准的体用判语。',
+      placeholder: '例如：补充目前的处境、与占问人或事的关系，或者你起卦时看到、听到的突发外应（如风吹旗动、突闻鸟鸣）...'
+    },
+    ziwei: {
+      title: '💬 二次沟通 / 补充个人现状与反馈',
+      desc: '解卦师摊主在上面可能指出了你性格中的特点与运势起伏。你可以在下方输入回答，补充你目前的个人现状、想要着重问询的领域（如近期面临的职业抉择、感情困惑等）或对上一轮解说的反馈，从而获得针对性的修心解厄指南。',
+      placeholder: '例如：反馈目前的求职状态或感情现状；说明你希望摊主能够着重就当下大限运势提供哪些针对性的规划建议...'
+    }
   }[type];
 
   // Cycling the loading messages to create a breathing, alive experience
@@ -44,11 +66,15 @@ export function AIInterpretation({ type, data }: AIInterpretationProps) {
 
   const serializedData = JSON.stringify(data);
 
-  const fetchInterpretation = useCallback(async () => {
+  const fetchInterpretation = useCallback(async (context?: string) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await getDivinationInterpretation(type, JSON.parse(serializedData));
+      const parsedData = JSON.parse(serializedData);
+      if (context) {
+        parsedData.additionalContext = context;
+      }
+      const res = await getDivinationInterpretation(type, parsedData);
       setResult(res);
     } catch (err: any) {
       setError(err.message || '获取AI解卦失败，请检查网络后重试。');
@@ -148,7 +174,7 @@ export function AIInterpretation({ type, data }: AIInterpretationProps) {
       )}
 
       {/* Error state */}
-      {error && (
+      {error && !loading && (
         <div className="space-y-4 py-4">
           <div className="p-4 bg-red-950/20 border border-red-500/20 rounded-2xl text-red-400 text-xs font-sans flex items-start gap-3">
             <span className="text-base mt-0.5">⚠️</span>
@@ -159,7 +185,7 @@ export function AIInterpretation({ type, data }: AIInterpretationProps) {
           </div>
           <div className="flex justify-center">
             <button
-              onClick={fetchInterpretation}
+              onClick={() => fetchInterpretation(submittedContext)}
               className="px-5 py-2 rounded-full border border-terracotta text-terracotta text-xs font-sans tracking-widest hover:bg-terracotta hover:text-white transition-all duration-300 shadow-sm shadow-terracotta/5 active:scale-95 cursor-pointer"
             >
                🔄 重新解读
@@ -172,6 +198,61 @@ export function AIInterpretation({ type, data }: AIInterpretationProps) {
       {!loading && !error && result && (
         <div className="space-y-2 animate-fadeIn prose max-w-none">
           {renderContent(result)}
+        </div>
+      )}
+
+      {/* Secondary communication input - always visible once we have an initial result */}
+      {result && !error && (
+        <div className="border-t border-border/30 pt-6 mt-6 space-y-4">
+          <div className="space-y-1.5">
+            <h4 className="text-sm font-serif text-ink tracking-wide flex items-center gap-1.5">
+              <span>{secondaryConfig.title}</span>
+            </h4>
+            <p className="text-[11px] text-muted font-light leading-relaxed">
+              {secondaryConfig.desc}
+            </p>
+          </div>
+          
+          <div className="space-y-3">
+            <textarea
+              value={additionalContext}
+              onChange={(e) => setAdditionalContext(e.target.value)}
+              disabled={loading}
+              placeholder={secondaryConfig.placeholder}
+              className="w-full h-24 px-4 py-3 rounded-2xl border border-border bg-cream/30 text-ink focus:outline-none focus:ring-1 focus:ring-gold/40 focus:border-gold transition-all text-xs resize-none disabled:opacity-50"
+            />
+            
+            <div className="flex gap-3 justify-end">
+              {submittedContext && !loading && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAdditionalContext('');
+                    setSubmittedContext('');
+                    fetchInterpretation();
+                  }}
+                  className="px-4 py-2 rounded-xl border border-border text-muted text-xs hover:border-gold/30 hover:text-gold transition-all cursor-pointer font-sans font-light bg-cream/10"
+                >
+                  撤销补充
+                </button>
+              )}
+              <button
+                type="button"
+                disabled={!additionalContext.trim() || loading}
+                onClick={() => {
+                  setSubmittedContext(additionalContext);
+                  fetchInterpretation(additionalContext);
+                }}
+                className={`px-5 py-2 rounded-xl text-xs font-sans tracking-wider transition-all duration-300 shadow-sm shadow-gold/5 active:scale-95 cursor-pointer font-light ${
+                  additionalContext.trim() && !loading
+                    ? 'bg-gold text-cream hover:bg-gold/90'
+                    : 'bg-border text-muted cursor-not-allowed'
+                }`}
+              >
+                {loading ? '正在重新解卦...' : '提交补充，重新解卦'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

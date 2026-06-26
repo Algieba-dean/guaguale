@@ -27,6 +27,7 @@ const getOpenAIClient = () => {
 export interface LiuyaoData {
   question?: string;
   timestamp?: number;
+  additionalContext?: string;
   mainHexagram: {
     name: string;
     unicode: string;
@@ -58,6 +59,7 @@ export interface MeihuaData {
     unicode: string;
     judgment?: { original: string; translation: string };
   } | null;
+  additionalContext?: string;
 }
 
 export interface ZiweiData {
@@ -74,6 +76,7 @@ export interface ZiweiData {
     luckRange: string;
     branch: string;
   };
+  additionalContext?: string;
 }
 
 /**
@@ -190,6 +193,8 @@ ${transLineDetails}
 
 请结合【专业纳甲本卦排盘信息】和【专业纳甲变卦（之卦）排盘信息】进行深入、通俗白话且极其符合传统卦理的分析，给出切实的行动警示与建议。
 `;
+
+
     } else {
       prompt += `
 请结合易经爻象、动爻与静爻的生克转换，深度剖析本卦与变卦的承接轨迹，分析世应、动变及用神关系，针对用户询问的事情给出切实的行动警示与灵性启迪。
@@ -226,6 +231,16 @@ ${transLineDetails}
 大限起岁：${zData.mingGongData.luckRange}
 
 请结合紫微斗数命理理论，剖析该命主的核心性格特质、先天福泽格局。分析其本命盘的优势与短板，并就此格局给出具体的为人处世与自我突破的“修心解厄”指南。
+`;
+  }
+
+  if (data.additionalContext) {
+    prompt += `
+
+【用户补充背景与二次沟通反馈】：
+${data.additionalContext}
+
+请高度重视上述由用户最新补充的背景信息（或对你上一轮提出的不确定项的回答）。结合我们排盘出的专业占卜命理信息、卦理星盘逻辑以及这一最新背景，重新进行全面的推演、分析与综合断验，以修正并提升占断运势结论的准确性和针对性。
 `;
   }
 
