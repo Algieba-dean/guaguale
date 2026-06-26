@@ -96,3 +96,26 @@ export function getTransformedHexagram(lines: number[]): Hexagram | null {
   const structure = linesToStructure(transformedLines);
   return getHexagramByStructure(structure);
 }
+
+/**
+ * Reconstruct the original 6 line values (6, 7, 8, 9) from the saved hexagram ID and changing lines.
+ */
+export function reconstructLiuyaoLines(mainHexagramId: number, changingLines: number[] = []): number[] {
+  const hexagram = getHexagramById(mainHexagramId);
+  if (!hexagram || !hexagram.structure) return [];
+
+  const structure = hexagram.structure; // e.g., "111111"
+  const lines: number[] = [];
+  for (let i = 0; i < 6; i++) {
+    const pos = i + 1;
+    const isChanging = changingLines.includes(pos);
+    const isYang = structure[i] === '1';
+
+    if (isYang) {
+      lines.push(isChanging ? 9 : 7);
+    } else {
+      lines.push(isChanging ? 6 : 8);
+    }
+  }
+  return lines;
+}

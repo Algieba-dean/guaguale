@@ -1,4 +1,6 @@
 import OpenAI from 'openai';
+import { getAllHexagrams, reconstructLiuyaoLines } from './hexagram';
+import { calculateLiuyaoLayout } from './liuyaoLayout';
 
 // Read config injected at build-time by Vite define block
 const apiKey = process.env.API_KEY || '';
@@ -24,6 +26,7 @@ const getOpenAIClient = () => {
 
 export interface LiuyaoData {
   question?: string;
+  timestamp?: number;
   mainHexagram: {
     name: string;
     unicode: string;
@@ -109,9 +112,41 @@ ${changingLinesDesc}
 
 之卦（变卦）：${lData.transformedHexagram ? `${lData.transformedHexagram.name}卦 (${lData.transformedHexagram.unicode})` : '无之卦'}
 之卦卦辞：${lData.transformedHexagram?.judgment?.original || '无'}
+`;
 
+    // Calculate Najia parameters to enrich prompt
+    const hex = getAllHexagrams().find(h => h.name === lData.mainHexagram.name);
+    if (hex && lData.timestamp) {
+      const linesArray = reconstructLiuyaoLines(hex.id, lData.changingLines);
+      const layout = calculateLiuyaoLayout(linesArray, lData.timestamp);
+      
+      const lineDetails = layout.lines.map(line => {
+        let statusStr = '';
+        if (line.isVoid) statusStr = ' (旬空)';
+        else if (line.isYuePo) statusStr = ' (月破)';
+        else if (line.isRiPo) statusStr = ' (日破)';
+        else if (line.isAnDong) statusStr = ' (暗动)';
+        
+        const shiYingStr = line.isShi ? ' [世爻]' : (line.isYing ? ' [应爻]' : '');
+        return `  第 ${line.position} 爻: ${line.beast} | ${line.relation} ${line.branch}${line.element} ${line.lineType === 'yang' ? '━━━' : '━ ━'}${line.isChanging ? ' (变爻)' : ''}${shiYingStr}${statusStr}`;
+      }).join('\n');
+
+      prompt += `
+【专业纳甲排盘信息】
+起卦时间干支：${layout.yearGanzhi}年 ${layout.monthGanzhi}月 ${layout.dayGanzhi}日 ${layout.hourGanzhi}时
+日旬空亡：${layout.dayXunKong}
+本宫卦位：${layout.palaceName} (${layout.palaceElement}宫)${layout.isYouhun ? ' · 游魂卦' : ''}${layout.isGuihun ? ' · 归魂卦' : ''}
+世应位置：世爻在第 ${layout.shiPosition} 爻，应爻在第 ${layout.yingPosition} 爻
+各爻地支与六亲六神分布（自下而上）：
+${lineDetails}
+
+请结合易经爻象、动爻与静爻的生克转换，并融合【专业纳甲排盘信息】中的日月五行生克、世应关系、旬空及月破/日破/暗动等要素，深度剖析事情的发展轨迹，针对用户询问的事情给出切实的行动警示与建议。
+`;
+    } else {
+      prompt += `
 请结合易经爻象、动爻与静爻的生克转换，深度剖析本卦与变卦的承接轨迹，并针对用户询问的事情给出切实的行动警示与灵性启迪。
 `;
+    }
   } else if (type === 'meihua') {
     const mData = data as MeihuaData;
     prompt = `

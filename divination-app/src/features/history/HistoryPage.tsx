@@ -10,8 +10,9 @@ import {
   type DivinationRecord,
   getStorageStats,
 } from '../../utils/storage';
-import { getHexagramById } from '../../utils/hexagram';
+import { getHexagramById, reconstructLiuyaoLines } from '../../utils/hexagram';
 import { useSEO } from '../../hooks/useSEO';
+import { NajiaTable } from '../../components/shared/NajiaTable';
 
 export function HistoryPage() {
   const navigate = useNavigate();
@@ -327,6 +328,17 @@ function HistoryRecordCard({
               <p className="text-muted leading-relaxed font-light text-xs pt-1.5 text-justify">
                 {record.data.shakerData.stickExplanation}
               </p>
+            </div>
+          )}
+
+          {/* Liuyao professional Najia table */}
+          {record.type === 'liuyao' && record.data.mainHexagram !== undefined && (
+            <div className="space-y-2">
+              <p className="text-xs text-muted font-light">起卦纳甲排盘信息：</p>
+              <NajiaTable 
+                lines={reconstructLiuyaoLines(record.data.mainHexagram, record.data.changingLines)} 
+                timestamp={record.timestamp} 
+              />
             </div>
           )}
 

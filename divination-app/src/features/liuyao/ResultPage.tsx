@@ -13,12 +13,14 @@ import { saveRecord } from '../../utils/storage';
 import { v4 as uuidv4 } from 'uuid';
 import { useState, useEffect } from 'react';
 import { AIInterpretation } from '../../components/shared/AIInterpretation';
+import { NajiaTable } from '../../components/shared/NajiaTable';
 
 export function ResultPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const state = location.state as { question: string; lines: LineValue[] } | null;
   const [saved, setSaved] = useState(false);
+  const [timestamp] = useState(Date.now());
 
   useEffect(() => {
     if (!state) {
@@ -38,7 +40,7 @@ export function ResultPage() {
   const handleSave = () => {
     const record = {
       id: uuidv4(),
-      timestamp: Date.now(),
+      timestamp,
       type: 'liuyao' as const,
       question,
       data: {
@@ -66,6 +68,7 @@ export function ResultPage() {
 
   const aiData = {
     question,
+    timestamp,
     mainHexagram: {
       name: mainHexagram.name,
       unicode: mainHexagram.unicode,
@@ -125,6 +128,9 @@ export function ResultPage() {
                 </p>
               </div>
             </div>
+
+            {/* Professional Najia Layout Board */}
+            <NajiaTable lines={lines} timestamp={timestamp} />
 
             {/* Judgment Text */}
             {mainHexagram.judgment && (

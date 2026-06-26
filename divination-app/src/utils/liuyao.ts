@@ -28,8 +28,8 @@ export function coinsToLineValue(coins: CoinResult[]): LineValue {
 
   switch (headsCount) {
     case 3: return 9; // Old Yang (老阳)
-    case 2: return 7; // Young Yang (少阳)
-    case 1: return 8; // Young Yin (少阴)
+    case 2: return 8; // Young Yin (少阴) - 2 heads/Yang (一阴两阳)
+    case 1: return 7; // Young Yang (少阳) - 1 head/Yang (一阳两阴)
     case 0: return 6; // Old Yin (老阴)
     default: return 7;
   }
