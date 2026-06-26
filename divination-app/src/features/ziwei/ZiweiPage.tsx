@@ -7,6 +7,7 @@ import { saveRecord, type DivinationRecord } from '../../utils/storage';
 import { v4 as uuidv4 } from 'uuid';
 import { AIInterpretation } from '../../components/shared/AIInterpretation';
 import { useSEO } from '../../hooks/useSEO';
+import { SharePosterModal } from '../../components/shared/SharePosterModal';
 
 interface BirthProfile {
   name: string;
@@ -132,6 +133,8 @@ export function ZiweiPage() {
   const [showChart, setShowChart] = useState(false);
   const [hoveredPalace, setHoveredPalace] = useState<PalaceData | null>(null);
   const [saved, setSaved] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [aiResult, setAiResult] = useState<string | null>(null);
 
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: currentYear - 1930 + 1 }, (_, i) => String(currentYear - i));
@@ -534,12 +537,19 @@ export function ZiweiPage() {
               </motion.div>
 
               {/* AI Interpretation */}
-              <AIInterpretation type="ziwei" data={ziweiData} />
+              <AIInterpretation type="ziwei" data={ziweiData} onResultLoaded={setAiResult} />
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-xl mx-auto">
                 <Button onClick={handleSave} disabled={saved} variant="primary" className="flex-1">
                   {saved ? '✓ 已保存排盘' : '保存此命盘'}
+                </Button>
+                <Button
+                  onClick={() => setShareModalOpen(true)}
+                  variant="secondary"
+                  className="flex-1"
+                >
+                  🌌 分享海报
                 </Button>
                 <Button
                   onClick={() => {
@@ -559,6 +569,13 @@ export function ZiweiPage() {
                   返回首页
                 </Button>
               </div>
+              <SharePosterModal
+                isOpen={shareModalOpen}
+                onClose={() => setShareModalOpen(false)}
+                type="ziwei"
+                data={ziweiData}
+                aiResult={aiResult}
+              />
             </div>
           )}
 

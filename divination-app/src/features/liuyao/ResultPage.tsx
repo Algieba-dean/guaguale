@@ -15,6 +15,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useState, useEffect } from 'react';
 import { AIInterpretation } from '../../components/shared/AIInterpretation';
 import { NajiaTable } from '../../components/shared/NajiaTable';
+import { SharePosterModal } from '../../components/shared/SharePosterModal';
 
 export function ResultPage() {
   const location = useLocation();
@@ -22,6 +23,8 @@ export function ResultPage() {
   const state = location.state as { question: string; lines: LineValue[]; timestamp?: number } | null;
   const [saved, setSaved] = useState(false);
   const [timestamp] = useState(state?.timestamp || Date.now());
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [aiResult, setAiResult] = useState<string | null>(null);
 
   useEffect(() => {
     if (!state) {
@@ -84,6 +87,7 @@ export function ResultPage() {
   const aiData = {
     question,
     timestamp,
+    lines,
     mainHexagram: {
       name: mainHexagram.name,
       unicode: mainHexagram.unicode,
@@ -300,7 +304,7 @@ export function ResultPage() {
           </div>
 
           {/* AI Interpretation */}
-          <AIInterpretation type="liuyao" data={aiData} />
+          <AIInterpretation type="liuyao" data={aiData} onResultLoaded={setAiResult} />
 
           {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
@@ -310,6 +314,12 @@ export function ResultPage() {
               variant="primary"
             >
               {saved ? '✓ 已保存' : '保存记录'}
+            </Button>
+            <Button
+              onClick={() => setShareModalOpen(true)}
+              variant="secondary"
+            >
+              🌌 分享海报
             </Button>
             <Button
               onClick={() => navigate('/liuyao')}
@@ -326,6 +336,13 @@ export function ResultPage() {
           </div>
         </div>
       </div>
+      <SharePosterModal
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        type="liuyao"
+        data={aiData}
+        aiResult={aiResult}
+      />
     </PageTransition>
   );
 }

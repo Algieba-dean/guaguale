@@ -4,6 +4,7 @@ import { getDivinationInterpretation } from '../../utils/deepseek';
 interface AIInterpretationProps {
   type: 'liuyao' | 'meihua' | 'ziwei';
   data: any;
+  onResultLoaded?: (result: string | null) => void;
 }
 
 const hasPendingQuestions = (text: string | null): boolean => {
@@ -28,7 +29,7 @@ const hasPendingQuestions = (text: string | null): boolean => {
   return true;
 };
 
-export function AIInterpretation({ type, data }: AIInterpretationProps) {
+export function AIInterpretation({ type, data, onResultLoaded }: AIInterpretationProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
@@ -91,6 +92,7 @@ export function AIInterpretation({ type, data }: AIInterpretationProps) {
   const fetchInterpretation = useCallback(async (context?: string) => {
     setLoading(true);
     setError(null);
+    if (onResultLoaded) onResultLoaded(null);
     try {
       const parsedData = JSON.parse(serializedData);
       if (context) {
@@ -98,12 +100,14 @@ export function AIInterpretation({ type, data }: AIInterpretationProps) {
       }
       const res = await getDivinationInterpretation(type, parsedData);
       setResult(res);
+      if (onResultLoaded) onResultLoaded(res);
     } catch (err: any) {
       setError(err.message || '获取AI解卦失败，请检查网络后重试。');
+      if (onResultLoaded) onResultLoaded(null);
     } finally {
       setLoading(false);
     }
-  }, [type, serializedData]);
+  }, [type, serializedData, onResultLoaded]);
 
   // Fetch immediately on load
   useEffect(() => {

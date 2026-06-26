@@ -8,6 +8,7 @@ import { saveRecord } from '../../utils/storage';
 import { v4 as uuidv4 } from 'uuid';
 import { useState } from 'react';
 import { AIInterpretation } from '../../components/shared/AIInterpretation';
+import { SharePosterModal } from '../../components/shared/SharePosterModal';
 
 export function MeihuaResultPage() {
   const location = useLocation();
@@ -15,6 +16,8 @@ export function MeihuaResultPage() {
   const result = location.state?.result as MeihuaResult | undefined;
   const question = location.state?.question as string | undefined;
   const [saved, setSaved] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [aiResult, setAiResult] = useState<string | null>(null);
 
   if (!result) {
     navigate('/meihua', { replace: true });
@@ -89,6 +92,8 @@ export function MeihuaResultPage() {
   const meihuaData = {
     question,
     method: result.method,
+    hexagramStructure: result.hexagramStructure,
+    transformedStructure: result.transformedStructure,
     upperTrigram: getTrigramName(result.upperTrigram),
     lowerTrigram: getTrigramName(result.lowerTrigram),
     mainHexagram: {
@@ -302,12 +307,19 @@ export function MeihuaResultPage() {
           </div>
 
           {/* AI Interpretation */}
-          <AIInterpretation type="meihua" data={meihuaData} />
+          <AIInterpretation type="meihua" data={meihuaData} onResultLoaded={setAiResult} />
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button onClick={handleSave} disabled={saved} variant="primary" className="flex-1">
               {saved ? '✓ 已保存至历史' : '保存记录'}
+            </Button>
+            <Button
+              onClick={() => setShareModalOpen(true)}
+              variant="secondary"
+              className="flex-1"
+            >
+              🌌 分享海报
             </Button>
             <Button
               onClick={() => navigate('/meihua')}
@@ -326,6 +338,13 @@ export function MeihuaResultPage() {
           </div>
         </div>
       </div>
+      <SharePosterModal
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        type="meihua"
+        data={meihuaData}
+        aiResult={aiResult}
+      />
     </PageTransition>
   );
 }
