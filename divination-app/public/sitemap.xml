@@ -1,33 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://guaguale.dean.astro/</loc>
-    <lastmod>2026-06-25</lastmod>
-    <changefreq>monthly</changefreq>
+    <loc>https://xgt.algieba12.cn/</loc>
+    <lastmod>2026-06-27</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://guaguale.dean.astro/liuyao</loc>
-    <lastmod>2026-06-25</lastmod>
-    <changefreq>monthly</changefreq>
+    <loc>https://xgt.algieba12.cn/liuyao</loc>
+    <lastmod>2026-06-27</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://guaguale.dean.astro/meihua</loc>
-    <lastmod>2026-06-25</lastmod>
-    <changefreq>monthly</changefreq>
+    <loc>https://xgt.algieba12.cn/meihua</loc>
+    <lastmod>2026-06-27</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://guaguale.dean.astro/ziwei</loc>
-    <lastmod>2026-06-25</lastmod>
-    <changefreq>monthly</changefreq>
+    <loc>https://xgt.algieba12.cn/ziwei</loc>
+    <lastmod>2026-06-27</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://guaguale.dean.astro/history</loc>
-    <lastmod>2026-06-25</lastmod>
-    <changefreq>monthly</changefreq>
+    <loc>https://xgt.algieba12.cn/shaker</loc>
+    <lastmod>2026-06-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://xgt.algieba12.cn/history</loc>
+    <lastmod>2026-06-27</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
 </urlset>

@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://guaguale.dean.astro/sitemap.xml
+Sitemap: https://xgt.algieba12.cn/sitemap.xml
