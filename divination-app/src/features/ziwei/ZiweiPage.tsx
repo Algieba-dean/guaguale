@@ -278,21 +278,28 @@ export function ZiweiPage() {
     const isYangYear = ['甲', '丙', '戊', '庚', '壬'].includes(yearGan);
     const isClockwise = (isYangYear && profile.gender === 'male') || (!isYangYear && profile.gender === 'female');
 
-    // 5. Position the Ziwei Star (紫微星)
-    // Find smallest X such that X * bureauAge >= lunarDay
-    let X = 1;
-    while (X * bureauAge < lunarDay) {
-      X++;
-    }
-    const R = X * bureauAge - lunarDay;
-    let ziweiIdx = 0;
-    if (R % 2 === 0) {
-      // Even R
-      ziweiIdx = (2 + X + R) % 12;
-    } else {
-      // Odd R
-      ziweiIdx = (2 + X - R + 12) % 12;
-    }
+    // 5. Position the Ziwei Star (紫微星) using authentic group-based shifting rules
+    const getZiweiIdx = (bAge: number, lDay: number): number => {
+      const dayIdx = lDay - 1; // 0-based index
+      if (bAge === 2) {
+        // Water 2 Bureau
+        if (lDay === 1) return 1; // 丑
+        return (1 + Math.floor(lDay / 2)) % 12;
+      }
+      const baseMap: Record<number, number[]> = {
+        3: [4, 1, 2],       // Wood 3 Bureau: 辰, 丑, 寅
+        4: [11, 4, 1, 2],    // Metal 4 Bureau: 亥, 辰, 丑, 寅
+        5: [6, 11, 4, 1, 2],  // Earth 5 Bureau: 午, 亥, 辰, 丑, 寅
+        6: [9, 6, 7, 8, 9, 10] // Fire 6 Bureau: 酉, 午, 未, 申, 酉, 戌
+      };
+      const base = baseMap[bAge];
+      if (!base) return 2; // Fallback
+      
+      const group = Math.floor(dayIdx / bAge);
+      const offset = dayIdx % bAge;
+      return (base[offset] + group) % 12;
+    };
+    const ziweiIdx = getZiweiIdx(bureauAge, lunarDay);
 
     // 6. Position all 14 Major Stars
     // Ziwei group (counter-clockwise)
@@ -303,7 +310,7 @@ export function ZiweiPage() {
     const lianzhenIdx = (ziweiIdx - 8 + 12) % 12;
 
     // Tianfu group (clockwise, start at symmetric axis)
-    const tianfuIdx = (10 - ziweiIdx + 12) % 12;
+    const tianfuIdx = (4 - ziweiIdx + 12) % 12;
     const taiyinIdx = (tianfuIdx + 1) % 12;
     const tanlangIdx = (tianfuIdx + 2) % 12;
     const jumenIdx = (tianfuIdx + 3) % 12;
@@ -512,6 +519,74 @@ export function ZiweiPage() {
 
   const chartData = generateChartData(profile);
   const mingGongData = chartData.find(p => p.name === '命宫') || chartData[0];
+
+  const getMingZhu = (branch: string): string => {
+    if (branch === '子') return '贪狼';
+    if (branch === '丑' || branch === '亥') return '巨门';
+    if (branch === '寅' || branch === '戌') return '禄存';
+    if (branch === '卯' || branch === '酉') return '文曲';
+    if (branch === '辰' || branch === '申') return '廉贞';
+    if (branch === '巳' || branch === '未') return '武曲';
+    return '破军';
+  };
+
+  const getProfileMetadata = (birthDate: string, birthHour: string) => {
+    if (!birthDate) {
+      return {
+        shenZhu: '火星',
+        pillars: ['丙午', '甲午', '壬申', '庚戌']
+      };
+    }
+    const [yStr, mStr, dStr] = birthDate.split('-');
+    const year = parseInt(yStr, 10) || 1995;
+    const month = parseInt(mStr, 10) || 5;
+    const day = parseInt(dStr, 10) || 18;
+
+    const hours = [
+      '子时 (23:00-01:00)', '丑时 (01:00-03:00)', '寅时 (03:00-05:00)',
+      '卯时 (05:00-07:00)', '辰时 (07:00-09:00)', '巳时 (09:00-11:00)',
+      '午时 (11:00-13:00)', '未时 (13:00-15:00)', '申时 (15:00-17:00)',
+      '酉时 (17:00-19:00)', '戌时 (19:00-21:00)', '亥时 (21:00-23:00)'
+    ];
+    const hourIdx = hours.indexOf(birthHour);
+    const hourVal = hourIdx === -1 ? 0 : hourIdx * 2;
+
+    let lunar: any;
+    try {
+      lunar = Solar.fromYmdHms(year, month, day, hourVal, 0, 0).getLunar();
+    } catch (e) {
+      lunar = Solar.fromYmdHms(1995, 5, 18, 0, 0, 0).getLunar();
+    }
+    
+    // Calculate Shen Zhu
+    const yearZhi = lunar.getYearZhi();
+    let shenZhu = '火星';
+    if (yearZhi === '子') shenZhu = '铃星';
+    else if (yearZhi === '丑' || yearZhi === '未') shenZhu = '天相';
+    else if (yearZhi === '寅' || yearZhi === '申') shenZhu = '天梁';
+    else if (yearZhi === '卯' || yearZhi === '酉') shenZhu = '天同';
+    else if (yearZhi === '辰' || yearZhi === '戌') shenZhu = '文昌';
+    else if (yearZhi === '巳' || yearZhi === '亥') shenZhu = '天机';
+    
+    // Calculate Eight Pillars
+    const eightChar = lunar.getEightChar();
+    const pillars = [
+      eightChar.getYear(),
+      eightChar.getMonth(),
+      eightChar.getDay(),
+      eightChar.getTime()
+    ];
+    
+    return {
+      shenZhu,
+      pillars
+    };
+  };
+
+  const metadata = getProfileMetadata(profile.birthDate, profile.birthHour);
+  const mingZhu = getMingZhu(mingGongData.branch);
+  const shenZhu = metadata.shenZhu;
+  const pillars = metadata.pillars;
 
   const currentFlowingBranchIdx = (currentYear - 4) % 12;
   const currentFlowingYearGanzhi = [
@@ -884,15 +959,43 @@ export function ZiweiPage() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -5 }}
                         transition={{ duration: 0.2 }}
-                        className="space-y-1.5 sm:space-y-2 my-auto font-sans"
+                        className="space-y-1 sm:space-y-2 my-auto font-sans"
                       >
                         <span className="text-[8px] sm:text-[9px] text-gold tracking-widest uppercase">命主格局盘志</span>
-                        <h3 className="text-sm sm:text-lg font-serif text-ink">{profile.name} 的紫微盘</h3>
-                        <div className="text-[10px] sm:text-[11px] text-muted space-y-0.5 sm:space-y-1 font-light leading-relaxed">
-                          <p>性别：{profile.gender === 'male' ? '乾造 (男)' : '坤造 (女)'}</p>
-                          <p>诞辰：{profile.birthDate}</p>
-                          <p>时辰：{profile.birthHour}</p>
-                          <p className="text-gold mt-1 pt-1 border-t border-border/20">💡 提示：点击或滑动宫位查看断语</p>
+                        <h3 className="text-sm sm:text-lg font-serif text-ink">{profile.name} 的紫微斗数盘</h3>
+                        
+                        {/* Eight Pillars (八字四柱) */}
+                        <div className="flex gap-2 sm:gap-3.5 justify-center items-center my-1 bg-border/20 py-1.5 px-2 rounded-xl">
+                          <div className="flex flex-col items-center">
+                            <span className="text-[6.5px] sm:text-[7.5px] text-muted leading-none">年柱</span>
+                            <span className="text-[10px] sm:text-xs font-semibold text-terracotta mt-0.5">{pillars[0]}</span>
+                          </div>
+                          <div className="w-[1px] h-3 bg-border/40" />
+                          <div className="flex flex-col items-center">
+                            <span className="text-[6.5px] sm:text-[7.5px] text-muted leading-none">月柱</span>
+                            <span className="text-[10px] sm:text-xs font-semibold text-ink mt-0.5">{pillars[1]}</span>
+                          </div>
+                          <div className="w-[1px] h-3 bg-border/40" />
+                          <div className="flex flex-col items-center">
+                            <span className="text-[6.5px] sm:text-[7.5px] text-muted leading-none">日柱</span>
+                            <span className="text-[10px] sm:text-xs font-semibold text-ink mt-0.5">{pillars[2]}</span>
+                          </div>
+                          <div className="w-[1px] h-3 bg-border/40" />
+                          <div className="flex flex-col items-center">
+                            <span className="text-[6.5px] sm:text-[7.5px] text-muted leading-none">时柱</span>
+                            <span className="text-[10px] sm:text-xs font-semibold text-ink mt-0.5">{pillars[3]}</span>
+                          </div>
+                        </div>
+
+                        {/* Life/Body Lords (命主身主) */}
+                        <div className="flex gap-4 justify-center text-[10px] sm:text-[11px] text-gold font-medium bg-gold/5 py-1 rounded-lg border border-gold/10">
+                          <span>命主: <strong className="text-ink font-semibold">{mingZhu}</strong></span>
+                          <span>身主: <strong className="text-ink font-semibold">{shenZhu}</strong></span>
+                        </div>
+
+                        <div className="text-[9.5px] sm:text-[10.5px] text-muted space-y-0.5 sm:space-y-1 font-light leading-relaxed">
+                          <p>性别: {profile.gender === 'male' ? '乾造 (男)' : '坤造 (女)'} | 诞辰: {profile.birthDate} ({profile.birthHour})</p>
+                          <p className="text-gold mt-1 pt-1 border-t border-border/20">💡 提示：点击或悬停宫位查看三合四化与研判</p>
                         </div>
                       </motion.div>
                     )}
