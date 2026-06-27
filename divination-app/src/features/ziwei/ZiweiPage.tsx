@@ -650,7 +650,18 @@ export function ZiweiPage() {
       desc: mingGongData.desc,
       luckRange: mingGongData.luckRange,
       branch: mingGongData.branch
-    }
+    },
+    mingZhu,
+    shenZhu,
+    pillars,
+    chartData: chartData.map(p => ({
+      name: p.name,
+      branch: p.branch,
+      stem: p.stem,
+      majorStars: p.majorStars,
+      minorStars: p.minorStars,
+      luckRange: p.luckRange
+    }))
   };
 
   return (

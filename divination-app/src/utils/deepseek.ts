@@ -76,21 +76,27 @@ export interface ZiweiData {
     luckRange: string;
     branch: string;
   };
+  mingZhu: string;
+  shenZhu: string;
+  pillars: string[];
+  chartData: Array<{
+    name: string;
+    branch: string;
+    stem: string;
+    majorStars: string[];
+    minorStars: string[];
+    luckRange: string;
+  }>;
   additionalContext?: string;
 }
 
 /**
- * Generate AI-based interpretation using DeepSeek
+ * Generate the system message and user prompt for the divination AI
  */
-export async function getDivinationInterpretation(
+export function getDivinationPrompt(
   type: 'liuyao' | 'meihua' | 'ziwei',
   data: any
-): Promise<string> {
-  const client = getOpenAIClient();
-  if (!apiKey) {
-    throw new Error('API秘钥未配置，无法进行AI解卦。请检查系统环境变量 MODEL / API_KEY / BASE_URL。');
-  }
-
+): { prompt: string; systemMessage: string } {
   let prompt = '';
 
   if (type === 'liuyao') {
@@ -117,7 +123,6 @@ ${changingLinesDesc}
 之卦卦辞：${lData.transformedHexagram?.judgment?.original || '无'}
 `;
 
-    // Calculate Najia parameters to enrich prompt
     const hex = getAllHexagrams().find(h => h.name === lData.mainHexagram.name);
     if (hex && lData.timestamp) {
       const linesArray = reconstructLiuyaoLines(hex.id, lData.changingLines);
@@ -193,8 +198,6 @@ ${transLineDetails}
 
 请结合【专业纳甲本卦排盘信息】和【专业纳甲变卦（之卦）排盘信息】进行深入、通俗白话且极其符合传统卦理的分析，给出切实的行动警示与建议。
 `;
-
-
     } else {
       prompt += `
 请结合易经爻象、动爻与静爻的生克转换，深度剖析本卦与变卦的承接轨迹，分析世应、动变及用神关系，针对用户询问的事情给出切实的行动警示与灵性启迪。
@@ -215,22 +218,44 @@ ${transLineDetails}
 
 变卦（之卦）：${mData.transformedHexagram ? `${mData.transformedHexagram.name}卦 (${mData.transformedHexagram.unicode})` : '无变卦'}
 
-请根据梅花易数“体用生克分析法”，根据体卦与用卦的五行生克关系（生我、我生、克我、我克、同气），配合动爻爻变之走向，深入讲解此事的现状阻力、助力分布以及未来结局走向，并给出行事趋避方案。
+【专业梅花易数解卦要领】
+请作为专业的易学名家，结合以下步骤为用户提供详尽剖析：
+1. **明确体卦与用卦**：指出体卦和用卦各自代表的五行和象征（体卦为自己，用卦为他人或所问之事）。
+2. **评判体用生克强弱**：依据体用五行生克关系（生我为体受生，我生为体泄气，克我为体受克，我克为体克事，同气为比和相助），结合起卦季节的时令旺衰，分析体卦的坚韧度。
+3. **结合互卦与变卦演变**：互卦代表事态发展的中间过程与暗地里的阻力/助力；变卦（之卦）代表事态的终局结果。结合体用在互卦、变卦中的生克转化进行断验。
+4. **推断时空应期**：结合五行生旺休囚的干支时间（如木旺于春、衰于秋，金旺于秋、衰于夏等），推断事态发生的可能应期（年、月、日、时）。
 `;
   } else if (type === 'ziwei') {
     const zData = data as ZiweiData;
+    const chartDetailsDesc = zData.chartData.map((p) => {
+      const majors = p.majorStars.join('、') || '无主星';
+      const minors = p.minorStars.join('、') || '无';
+      return `  - ${p.name} (${p.stem}${p.branch}宫, 大限: ${p.luckRange}): 主星[${majors}], 辅星[${minors}]`;
+    }).join('\n');
+
     prompt = `
 【紫微斗数命盘参数】
 命主姓名：${zData.profile.name}
 性别：${zData.profile.gender === 'male' ? '乾造 (男)' : '坤造 (女)'}
-出生时间：${zData.profile.birthDate} ${zData.profile.birthHour}
+诞辰：${zData.profile.birthDate} (${zData.profile.birthHour})
+八字四柱：年柱[${zData.pillars?.[0] || ''}], 月柱[${zData.pillars?.[1] || ''}], 日柱[${zData.pillars?.[2] || ''}], 时柱[${zData.pillars?.[3] || ''}]
+命主星：${zData.mingZhu || '无'} | 身主星：${zData.shenZhu || '无'}
 
 命宫主星：${zData.mingGongData.majorStars.join('、')}
 命宫辅星：${zData.mingGongData.minorStars.join('、')}
-命宫所属格局：${zData.mingGongData.desc}
+命宫所属格局：${zData.mingGongData.desc || '普通格局'}
 大限起岁：${zData.mingGongData.luckRange}
 
-请结合紫微斗数命理理论，剖析该命主的核心性格特质、先天福泽格局。分析其本命盘的优势与短板，并就此格局给出具体的为人处世与自我突破的“修心解厄”指南。
+【全盘十二宫曜分布情况】
+${chartDetailsDesc}
+
+【专业紫微星盘解读要领】
+请作为专业的命理断盘师，结合以下步骤为命主提供详尽剖析：
+1. **分析命身宫及核心性格**：结合命宫主星及命主、身主特质，解剖其先天的性格张力、内心精神追求与气质。
+2. **断解核心格局优劣**：评析其所属格局，找出命盘的本命闪光点（优势）与先天的薄弱环（短板）。
+3. **辨析生年四化之化忌与化禄**：找出四化落在哪些宫位，尤其是“化忌”所落的宫位（代表痛点、阻碍、亏欠）以及“化禄”所落的宫位（代表源头、顺遂、福泽），分析其对整盘能量的拉扯。
+4. **研判三方四正与财官运势**：结合命宫、财帛宫、官禄宫及迁移宫的三方四正组合，分析其事业与财运的大体轨迹。
+5. **指出当前大限运势走向**：结合大限起岁与当前所行大限宫位的星曜，指明命主目前大运阶段的特征与应对策略。
 `;
   }
 
@@ -272,13 +297,48 @@ ${data.additionalContext}
    - ### ❓ 待补充与不确定信息
      - [注意：只有在确实存在严重影响占断结论的重大信息缺失、或有必须向用户核实的不确定项时，才输出这一节并提出具体问题。如果目前已知信息已足够得出明确占断，或已无需额外背景，则**绝对不能**输出此节（连同“### ❓ 待补充与不确定信息”标题也绝对不要输出）。]
 
-对于梅花易数和紫微斗数，可保留原有的亲切叙述结构（包含 ### 🎯 摊主看这卦/命盘, ### 🔍 摊主详细说, ### 💡 摊主给你的小建议）。同理，若有必须向用户核实的不确定项，也可在结尾增加一节“### ❓ 待补充与不确定信息”提出问题；若无，则绝对不要输出此标题。
+对于紫微斗数，必须严格遵循以下结构化排版和内容要求进行输出：
+1. **说人话**：使用生活化的语境与口吻，自称“摊主我”或“小卦摊摊主”。
+2. **排版格式**：必须包含以下结构和标题：
+   - ### 🎯 摊主命盘卡片
+     - **格局断语**：[如：紫府同宫格 / 极向离明格 / 杀破狼格 / 命无主星 等格局总评]
+     - **核心能量**：[用3-4个词语概括，如：刚毅、厚重、聪颖、多思]
+     - **运势提示**：[当前大限运势主调，如：龙潜在渊，蓄势待发 / 飞龙在天，利见大人]
+   - ### 💬 摊主一句话（百字简析）
+     - [100字以内的口语化大白话分析]
+   - ### 💡 摊主给你的修心小建议
+     - [具体的性格弱点规避、为人处世及破局小行动建议]
+   - ### 🔍 摊主命理依据链路
+     - **第一步：定命身** [简述命身宫主星、辅星特质代表的核心潜质与性格双重性]
+     - **第二步：析格局** [论命盘所属格局、吉煞星分布及性格阴阳面]
+     - **第三步：辨四化** [结合生年干四化（科权禄忌）对命宫及周围的动态生克影响，特别是“化忌”的痛点与“化禄”的顺遂]
+     - **第四步：看大限** [论当前大限岁数及行限主要宫位的运势走向]
+   - ### 📖 依据与引用
+     - [引述经典紫微歌诀或传统著作（如《紫微斗数全书》、《骨髓赋》）的规则口诀，不超过100字]
+   - ### ❓ 待补充与不确定信息
+     - [注意：只有在确实需要命主补充背景或反馈时才输出，如无则绝对不要输出。]
+
+对于梅花易数，可保留原有的亲切叙述结构（包含 ### 🎯 摊主看这卦/命盘, ### 🔍 摊主详细说, ### 💡 摊主给你的小建议）。同理，若有必须向用户核实的不确定项，也可在结尾增加一节“### ❓ 待补充与不确定信息”提出问题；若无，则绝对不要输出此标题。
 
 其他要求：
-- 必须输出中文，六爻占卜字数建议在 500-950 字左右，确保推理步骤完整。
+- 必须输出中文，六爻/紫微占字数建议在 500-950 字左右，确保推理步骤完整。
 - 举例说明时可以用"打个比方"、"简单来说"、"换句话说"这类过渡词。
 - 禁止使用以下词汇：拨云见日、天机、玄妙、神韵、灵性、参悟、法要。
 `;
+
+  return { prompt, systemMessage };
+}
+
+export async function getDivinationInterpretation(
+  type: 'liuyao' | 'meihua' | 'ziwei',
+  data: any
+): Promise<string> {
+  const client = getOpenAIClient();
+  if (!apiKey) {
+    throw new Error('API秘钥未配置，无法进行AI解卦。请检查系统环境变量 MODEL / API_KEY / BASE_URL。');
+  }
+
+  const { prompt, systemMessage } = getDivinationPrompt(type, data);
 
   try {
     const response = await client.chat.completions.create({

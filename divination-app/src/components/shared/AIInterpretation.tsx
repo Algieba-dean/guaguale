@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getDivinationInterpretation } from '../../utils/deepseek';
+import { getDivinationInterpretation, getDivinationPrompt } from '../../utils/deepseek';
 
 interface AIInterpretationProps {
   type: 'liuyao' | 'meihua' | 'ziwei';
@@ -38,6 +38,46 @@ export function AIInterpretation({ type, data, onResultLoaded }: AIInterpretatio
   // States for secondary communication / context
   const [additionalContext, setAdditionalContext] = useState('');
   const [submittedContext, setSubmittedContext] = useState('');
+  const [copied, setCopied] = useState(false);
+
+  const serializedData = JSON.stringify(data);
+
+  const handleCopyPrompt = () => {
+    try {
+      const parsedData = JSON.parse(serializedData);
+      if (submittedContext) {
+        parsedData.additionalContext = submittedContext;
+      }
+      const { prompt, systemMessage } = getDivinationPrompt(type, parsedData);
+      const copyText = `## 角色设定（AI解卦师指示）\n${systemMessage}\n\n## 卦盘/命盘数据与问题\n${prompt}`;
+      
+      navigator.clipboard.writeText(copyText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy prompt:', err);
+    }
+  };
+
+  const fetchInterpretation = useCallback(async (context?: string) => {
+    setLoading(true);
+    setError(null);
+    if (onResultLoaded) onResultLoaded(null);
+    try {
+      const parsedData = JSON.parse(serializedData);
+      if (context) {
+        parsedData.additionalContext = context;
+      }
+      const res = await getDivinationInterpretation(type, parsedData);
+      setResult(res);
+      if (onResultLoaded) onResultLoaded(res);
+    } catch (err: any) {
+      setError(err.message || '获取AI解卦失败，请检查网络后重试。');
+      if (onResultLoaded) onResultLoaded(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [type, serializedData, onResultLoaded]);
 
   const thinkingPhrases = {
     liuyao: [
@@ -86,28 +126,6 @@ export function AIInterpretation({ type, data, onResultLoaded }: AIInterpretatio
     }, 3000);
     return () => clearInterval(interval);
   }, [loading, thinkingPhrases.length]);
-
-  const serializedData = JSON.stringify(data);
-
-  const fetchInterpretation = useCallback(async (context?: string) => {
-    setLoading(true);
-    setError(null);
-    if (onResultLoaded) onResultLoaded(null);
-    try {
-      const parsedData = JSON.parse(serializedData);
-      if (context) {
-        parsedData.additionalContext = context;
-      }
-      const res = await getDivinationInterpretation(type, parsedData);
-      setResult(res);
-      if (onResultLoaded) onResultLoaded(res);
-    } catch (err: any) {
-      setError(err.message || '获取AI解卦失败，请检查网络后重试。');
-      if (onResultLoaded) onResultLoaded(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [type, serializedData, onResultLoaded]);
 
   // Fetch immediately on load
   useEffect(() => {
@@ -185,11 +203,20 @@ export function AIInterpretation({ type, data, onResultLoaded }: AIInterpretatio
           </svg>
           <span>AI 智能解读</span>
         </h3>
-        {loading && (
-          <span className="text-[10px] text-gold tracking-widest font-sans uppercase animate-pulse">
-            分析中
-          </span>
-        )}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleCopyPrompt}
+            className="px-3 py-1 rounded-full border border-gold/30 hover:border-gold text-[10px] text-gold tracking-wider font-sans transition-all active:scale-95 cursor-pointer bg-cream/5 hover:bg-cream/10"
+            title="复制排盘提示词，可自行粘贴到 ChatGPT / Claude 等大模型提问"
+          >
+            {copied ? '✓ 已复制提示词' : '📋 复制排盘提示词'}
+          </button>
+          {loading && (
+            <span className="text-[10px] text-gold tracking-widest font-sans uppercase animate-pulse">
+              分析中
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Loading state */}
