@@ -245,10 +245,10 @@ export function ShakePage() {
               </div>
             )}
 
-            {/* Lines Generated */}
+            {/* Lines Generated (displayed bottom-to-top traditionally) */}
             {lines.length > 0 && (
               <div className="w-full pt-6 border-t border-border/80">
-                <div className="space-y-2">
+                <div className="flex flex-col-reverse gap-2">
                   {lines.map((line, index) => {
                     const getLineSymbol = (value: number) => {
                       if (value === 9) return '━━━ ◯'; // 老阳（变爻）
@@ -256,6 +256,11 @@ export function ShakePage() {
                       if (value === 6) return '━ ━ ✕'; // 老阴（变爻）
                       if (value === 8) return '━ ━';    // 少阴
                       return '';
+                    };
+
+                    const getPositionName = (idx: number): string => {
+                      const names = ['初爻', '二爻', '三爻', '四爻', '五爻', '上爻'];
+                      return names[idx] || '';
                     };
 
                     const isChanging = line === 6 || line === 9;
@@ -268,7 +273,7 @@ export function ShakePage() {
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.3, ease: 'easeOut' }}
                       >
-                        <span className="text-muted font-light">初至上第 {index + 1} 爻：</span>
+                        <span className="text-muted font-light">{getPositionName(index)}：</span>
                         <div className="flex items-center gap-4">
                           <span className={`font-mono text-base tracking-wider ${isChanging ? 'text-terracotta' : 'text-gold/80'}`}>
                             {getLineSymbol(line)}
