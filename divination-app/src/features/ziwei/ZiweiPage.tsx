@@ -540,7 +540,7 @@ export function ZiweiPage() {
               <AIInterpretation type="ziwei" data={ziweiData} onResultLoaded={setAiResult} />
 
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-xl mx-auto">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-2xl mx-auto mt-8 font-sans text-xs sm:text-sm">
                 <Button onClick={handleSave} disabled={saved} variant="primary" className="flex-1">
                   {saved ? '✓ 已保存排盘' : '保存此命盘'}
                 </Button>
