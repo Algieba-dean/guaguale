@@ -623,25 +623,27 @@ export function SharePosterModal({ isOpen, onClose, type, data, aiResult }: Shar
           </div>
 
           {/* ── Question / Subject ─────────────────────────────────────────── */}
-          <div style={{ textAlign: 'center', marginBottom: '14px', position: 'relative', zIndex: 10 }}>
-            <div style={{ fontSize: '9px', color: '#DFB15B', letterSpacing: '4px', marginBottom: '5px', fontWeight: 500 }}>
-              {type === 'ziwei' ? '命 主 排 盘' : '求 占 问 事'}
+          {(type === 'ziwei' || (data.question && data.question.trim() !== '')) && (
+            <div style={{ textAlign: 'center', marginBottom: '14px', position: 'relative', zIndex: 10 }}>
+              <div style={{ fontSize: '9px', color: '#DFB15B', letterSpacing: '4px', marginBottom: '5px', fontWeight: 500 }}>
+                {type === 'ziwei' ? '命 主 排 盘' : '求 占 问 事'}
+              </div>
+              <div style={{
+                fontSize: '14px',
+                fontWeight: 500,
+                color: '#1A1A1A',
+                padding: '6px 16px',
+                lineHeight: 1.6,
+                backgroundColor: 'rgba(223,177,91,0.06)',
+                borderRadius: '8px',
+                display: 'inline-block',
+                maxWidth: '280px',
+                wordBreak: 'break-all' as const,
+              }}>
+                「{questionText}」
+              </div>
             </div>
-            <div style={{
-              fontSize: '14px',
-              fontWeight: 500,
-              color: '#1A1A1A',
-              padding: '6px 16px',
-              lineHeight: 1.6,
-              backgroundColor: 'rgba(223,177,91,0.06)',
-              borderRadius: '8px',
-              display: 'inline-block',
-              maxWidth: '280px',
-              wordBreak: 'break-all' as const,
-            }}>
-              「{questionText}」
-            </div>
-          </div>
+          )}
 
           {/* ── Divination Content ─────────────────────────────────────────── */}
           <div style={{ position: 'relative', zIndex: 10, flex: 1 }}>
