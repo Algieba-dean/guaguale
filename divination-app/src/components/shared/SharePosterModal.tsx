@@ -429,31 +429,209 @@ export function SharePosterModal({ isOpen, onClose, type, data, aiResult }: Shar
 
   const renderZiweiPoster = () => {
     const zData = data;
+    const palaces = zData.chartData || [];
+
+    // Grid positions: map branch index to CSS grid position
+    // Branch order: 子(0) 丑(1) 寅(2) 卯(3) 辰(4) 巳(5) 午(6) 未(7) 申(8) 酉(9) 戌(10) 亥(11)
+    const gridPos: Record<number, { col: number; row: number }> = {
+      0: { col: 3, row: 4 }, // 子
+      1: { col: 2, row: 4 }, // 丑
+      2: { col: 1, row: 4 }, // 寅
+      3: { col: 1, row: 3 }, // 卯
+      4: { col: 1, row: 2 }, // 辰
+      5: { col: 1, row: 1 }, // 巳
+      6: { col: 2, row: 1 }, // 午
+      7: { col: 3, row: 1 }, // 未
+      8: { col: 4, row: 1 }, // 申
+      9: { col: 4, row: 2 }, // 酉
+      10: { col: 4, row: 3 }, // 戌
+      11: { col: 4, row: 4 }, // 亥
+    };
+    const branchOrder = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+
+    const shColorMap: Record<string, string> = {
+      '禄': '#059669',
+      '权': '#e11d48',
+      '科': '#2563eb',
+      '忌': '#71717a',
+    };
+
     return (
       <>
+        {/* Profile Summary */}
         <div style={{
-          border: '1px solid rgba(107,97,85,0.2)',
-          borderRadius: '12px',
-          padding: '14px',
-          fontSize: '11px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          fontSize: '10px',
           color: '#1A1A1A',
-          lineHeight: 1.8,
-          marginBottom: '8px',
-          backgroundColor: 'rgba(250,248,245,0.5)',
+          marginBottom: '6px',
+          padding: '4px 6px',
+          backgroundColor: 'rgba(223,177,91,0.06)',
+          borderRadius: '6px',
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-            <span>命主：<strong style={{ color: '#DFB15B' }}>{zData.profile?.name}</strong></span>
-            <span>{zData.profile?.gender === 'male' ? '乾造 (男)' : '坤造 (女)'}</span>
-          </div>
-          <div>诞辰：{zData.profile?.birthDate} {zData.profile?.birthHour?.split(' ')[0]}</div>
-          <div style={{ borderTop: '1px solid rgba(107,97,85,0.15)', marginTop: '8px', paddingTop: '8px' }}>
-            命宫主星：<strong style={{ color: '#DFB15B' }}>{zData.mingGongData?.majorStars?.join('、')}</strong>
-          </div>
-          {zData.mingGongData?.minorStars && zData.mingGongData.minorStars.length > 0 && (
-            <div style={{ fontSize: '10px', color: '#6B6155', marginTop: '2px' }}>
-              辅星：{zData.mingGongData.minorStars.slice(0, 4).join('、')}
+          <span>命主：<strong style={{ color: '#DFB15B' }}>{zData.profile?.name}</strong> {zData.profile?.gender === 'male' ? '(乾造)' : '(坤造)'}</span>
+          <span style={{ fontSize: '9px', color: '#6B6155' }}>{zData.profile?.birthDate} {zData.profile?.birthHour?.split(' ')[0]}</span>
+        </div>
+
+        {/* 4x4 Chart Grid */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gridTemplateRows: 'repeat(4, 1fr)',
+          gap: '2px',
+          border: '1px solid rgba(107,97,85,0.25)',
+          borderRadius: '8px',
+          overflow: 'hidden',
+          backgroundColor: 'rgba(107,97,85,0.08)',
+          marginBottom: '6px',
+        }}>
+          {/* 12 Palace Cells */}
+          {palaces.map((palace: any, idx: number) => {
+            const branchIdx = branchOrder.indexOf(palace.branch);
+            const pos = gridPos[branchIdx] || { col: 1, row: 1 };
+            const isMingGong = palace.name === '命宫';
+
+            return (
+              <div
+                key={palace.branch}
+                style={{
+                  gridColumn: pos.col,
+                  gridRow: pos.row,
+                  backgroundColor: isMingGong ? 'rgba(179,57,37,0.06)' : '#FAF8F5',
+                  padding: '3px 4px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  minHeight: '60px',
+                  borderLeft: isMingGong ? '2px solid #B33925' : 'none',
+                }}
+              >
+                {/* Palace header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                  <span style={{
+                    fontSize: '7px',
+                    fontWeight: 600,
+                    color: isMingGong ? '#B33925' : '#DFB15B',
+                    backgroundColor: isMingGong ? 'rgba(179,57,37,0.1)' : 'rgba(223,177,91,0.1)',
+                    padding: '0px 3px',
+                    borderRadius: '2px',
+                  }}>
+                    {palace.name}
+                  </span>
+                  <span style={{ fontSize: '7px', color: '#6B6155' }}>
+                    {palace.stem}{palace.branch}
+                  </span>
+                </div>
+
+                {/* Major Stars */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '1px' }}>
+                  {(palace.majorStars || []).map((star: string) => {
+                    const [starName, sh] = star.split('·');
+                    return (
+                      <div key={starName} style={{
+                        fontSize: '8px',
+                        fontWeight: 600,
+                        color: '#1A1A1A',
+                        textAlign: 'center',
+                        lineHeight: 1.3,
+                      }}>
+                        {starName}
+                        {sh && (
+                          <span style={{
+                            fontSize: '6px',
+                            color: shColorMap[sh] || '#71717a',
+                            fontWeight: 700,
+                            marginLeft: '1px',
+                          }}>
+                            {sh}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {(palace.majorStars || []).length === 0 && (
+                    <div style={{ fontSize: '7px', color: '#B0A89F', textAlign: 'center', fontStyle: 'italic' }}>空宫</div>
+                  )}
+                </div>
+
+                {/* Minor Stars (compact) */}
+                {(palace.minorStars || []).length > 0 && (
+                  <div style={{
+                    fontSize: '5.5px',
+                    color: '#9B9488',
+                    textAlign: 'center',
+                    borderTop: '1px solid rgba(107,97,85,0.08)',
+                    paddingTop: '1px',
+                    marginTop: '1px',
+                    overflow: 'hidden',
+                    whiteSpace: 'nowrap',
+                    textOverflow: 'ellipsis',
+                  }}>
+                    {(palace.minorStars || []).slice(0, 4).map((s: string) => {
+                      const [n, sh] = s.split('·');
+                      return sh ? `${n}(${sh})` : n;
+                    }).join(' ')}
+                  </div>
+                )}
+
+                {/* Luck Range */}
+                <div style={{
+                  fontSize: '5.5px',
+                  color: '#9B9488',
+                  textAlign: 'center',
+                  marginTop: '1px',
+                }}>
+                  {palace.luckRange?.split(' ')[0]}
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Center 2x2: Profile Summary */}
+          <div style={{
+            gridColumn: '2 / 4',
+            gridRow: '2 / 4',
+            backgroundColor: '#FAF8F5',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: '8px',
+            gap: '4px',
+          }}>
+            <div style={{ fontSize: '8px', color: '#DFB15B', letterSpacing: '3px', fontWeight: 500 }}>紫 微 命 盘</div>
+            <div style={{ fontSize: '11px', fontWeight: 600, color: '#1A1A1A' }}>{zData.profile?.name}</div>
+            <div style={{ fontSize: '8px', color: '#6B6155', lineHeight: 1.5, textAlign: 'center' }}>
+              {zData.profile?.gender === 'male' ? '乾造 (男)' : '坤造 (女)'}
+              <br />
+              {zData.profile?.birthDate}
+              <br />
+              {zData.profile?.birthHour?.split(' ')[0]}
             </div>
-          )}
+            {(zData.mingZhu || zData.shenZhu) && (
+              <div style={{ fontSize: '7px', color: '#B33925', marginTop: '2px' }}>
+                {zData.mingZhu && `命主：${zData.mingZhu}`}
+                {zData.mingZhu && zData.shenZhu && ' · '}
+                {zData.shenZhu && `身主：${zData.shenZhu}`}
+              </div>
+            )}
+            {zData.pillars && (
+              <div style={{ fontSize: '7px', color: '#DFB15B', marginTop: '1px' }}>
+                {zData.pillars.year} {zData.pillars.month} {zData.pillars.day} {zData.pillars.hour}
+              </div>
+            )}
+            <div style={{
+              fontSize: '7px',
+              color: '#1A1A1A',
+              marginTop: '3px',
+              padding: '2px 6px',
+              backgroundColor: 'rgba(223,177,91,0.08)',
+              borderRadius: '4px',
+            }}>
+              命宫主星：<strong style={{ color: '#DFB15B' }}>{zData.mingGongData?.majorStars?.map((s: string) => s.split('·')[0]).join('、') || '无'}</strong>
+            </div>
+          </div>
         </div>
       </>
     );
