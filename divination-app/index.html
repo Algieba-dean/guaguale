@@ -26,6 +26,11 @@
         var targetDomain = '%VITE_REDIRECT_DOMAIN%';
         // If the variable is not set or Vite doesn't replace the placeholder, skip redirect
         if (!targetDomain || targetDomain.startsWith('%') || targetDomain === 'undefined') return;
+        
+        // Clean targetDomain to ensure it is just the hostname (no http/https or trailing slash)
+        targetDomain = targetDomain.replace(/^https?:\/\//i, '').replace(/\/+$/, '');
+        if (!targetDomain) return;
+
         var host = window.location.hostname;
         var isLocalIp = /^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(host);
         
