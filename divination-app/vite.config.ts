@@ -2,6 +2,7 @@ import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { resolve } from 'path'
+import { writeFileSync } from 'fs'
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
@@ -54,6 +55,71 @@ export default defineConfig(({ mode }) => {
           return html
             .replace(/%VITE_REDIRECT_DOMAIN%/g, env.VITE_REDIRECT_DOMAIN || '')
             .replace(/%VITE_GA_ID%/g, env.VITE_GA_ID || '');
+        }
+      },
+      {
+        name: 'generate-seo-files',
+        closeBundle() {
+          const siteUrl = (env.VITE_SITE_URL || 'https://xgt.algieba12.cn').replace(/\/$/, '');
+          const distDir = resolve(__dirname, 'dist');
+          
+          // Generate robots.txt
+          const robotsTxt = `User-agent: *\nAllow: /\n\nSitemap: ${siteUrl}/sitemap.xml\n`;
+          try {
+            writeFileSync(resolve(distDir, 'robots.txt'), robotsTxt, 'utf-8');
+            console.log('✓ robots.txt generated successfully.');
+          } catch (e) {
+            console.error('Failed to write robots.txt:', e);
+          }
+
+          // Generate sitemap.xml
+          const today = new Date().toISOString().split('T')[0];
+          const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>${siteUrl}/</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>${siteUrl}/liuyao</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>${siteUrl}/meihua</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>${siteUrl}/ziwei</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>${siteUrl}/shaker</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>${siteUrl}/history</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+</urlset>
+`;
+          try {
+            writeFileSync(resolve(distDir, 'sitemap.xml'), sitemapXml, 'utf-8');
+            console.log('✓ sitemap.xml generated successfully.');
+          } catch (e) {
+            console.error('Failed to write sitemap.xml:', e);
+          }
         }
       }
     ],
