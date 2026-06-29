@@ -33,10 +33,10 @@
 ## 📷 界面与海报演示
 
 ### 六爻起卦与海报分享
-![六爻分享海报](./public/screenshots/liuyao_share.png)
+![六爻分享海报](./divination-app/public/screenshots/liuyao_share.png)
 
 ### 紫微天星排盘分享
-![紫微星盘海报](./public/screenshots/ziwei_share.png)
+![紫微星盘海报](./divination-app/public/screenshots/ziwei_share.png)
 
 ---
 
@@ -110,4 +110,4 @@ Cloudflare Pages 提供免费、极速的静态网页托管，非常适合本项
 
 ## 📝 许可协议
 
-本项目基于 [MIT License](../LICENSE) 开源。欢迎大家提交 PR 或反馈建议。
+本项目基于 [MIT License](./LICENSE) 开源。欢迎大家提交 PR 或反馈建议。
