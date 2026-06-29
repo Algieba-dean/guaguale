@@ -5,7 +5,8 @@ import QRCode from 'qrcode';
 import { linesToStructure } from '../../utils/hexagram';
 import { calculateLiuyaoLayout } from '../../utils/liuyaoLayout';
 
-const SITE_URL = 'https://xgt.algieba12.cn/';
+const rawSiteUrl = import.meta.env.VITE_SITE_URL || window.location.origin;
+const SITE_URL = rawSiteUrl.endsWith('/') ? rawSiteUrl : rawSiteUrl + '/';
 
 // ── Poster-only hexagram glyph (pure inline styles, no Tailwind/oklch) ─────
 function PosterHexagram({ structure, changingLines = [] }: { structure: string; changingLines?: number[] }) {
@@ -486,8 +487,7 @@ export function SharePosterModal({ isOpen, onClose, type, data, aiResult }: Shar
           backgroundColor: 'rgba(107,97,85,0.08)',
           marginBottom: '6px',
         }}>
-          {/* 12 Palace Cells */}
-          {palaces.map((palace: any, idx: number) => {
+          {palaces.map((palace: any) => {
             const branchIdx = branchOrder.indexOf(palace.branch);
             const pos = gridPos[branchIdx] || { col: 1, row: 1 };
             const isMingGong = palace.name === '命宫';

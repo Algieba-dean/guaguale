@@ -2,19 +2,30 @@
 <html lang="zh-Hans">
   <head>
     <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-3F7N6X4CJ9"></script>
     <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
+      (function() {
+        var gaId = '%VITE_GA_ID%';
+        if (!gaId || gaId.startsWith('%') || gaId === 'undefined') return;
+        
+        var script = document.createElement('script');
+        script.async = true;
+        script.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;
+        document.head.appendChild(script);
 
-      gtag('config', 'G-3F7N6X4CJ9');
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        window.gtag = gtag;
+        gtag('js', new Date());
+        gtag('config', gaId);
+      })();
     </script>
     <meta charset="UTF-8" />
     <script>
       // Redirect to unified domain in production, allowing localhost, 127.0.0.1, local network IPs, and *.local
       (function() {
-        var targetDomain = 'xgt.algieba12.cn';
+        var targetDomain = '%VITE_REDIRECT_DOMAIN%';
+        // If the variable is not set or Vite doesn't replace the placeholder, skip redirect
+        if (!targetDomain || targetDomain.startsWith('%') || targetDomain === 'undefined') return;
         var host = window.location.hostname;
         var isLocalIp = /^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(host);
         

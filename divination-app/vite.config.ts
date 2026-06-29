@@ -47,7 +47,15 @@ export default defineConfig(({ mode }) => {
             }
           ]
         }
-      })
+      }),
+      {
+        name: 'html-env-replacement',
+        transformIndexHtml(html) {
+          return html
+            .replace(/%VITE_REDIRECT_DOMAIN%/g, env.VITE_REDIRECT_DOMAIN || '')
+            .replace(/%VITE_GA_ID%/g, env.VITE_GA_ID || '');
+        }
+      }
     ],
     define: {
       'process.env.API_KEY': JSON.stringify(env.API_KEY || ''),
