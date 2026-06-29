@@ -54,7 +54,8 @@ export default defineConfig(({ mode }) => {
         transformIndexHtml(html) {
           return html
             .replace(/%VITE_REDIRECT_DOMAIN%/g, env.VITE_REDIRECT_DOMAIN || '')
-            .replace(/%VITE_GA_ID%/g, env.VITE_GA_ID || '');
+            .replace(/%VITE_GA_ID%/g, env.VITE_GA_ID || '')
+            .replace(/%VITE_CLARITY_ID%/g, env.VITE_CLARITY_ID || '');
         }
       },
       {
