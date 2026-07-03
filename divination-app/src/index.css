@@ -16,6 +16,8 @@
   --color-gold-tint: rgba(223, 177, 91, 0.08);
   --color-gold-dark: #BFA146;
 
+  --animate-spin-slow: spin 12s linear infinite;
+
   --font-family-serif: Fraunces, "Noto Serif SC", serif;
   --font-family-sans: Inter, system-ui, sans-serif;
   --font-family-calligraphy: "Zhi Mang Xing", "Ma Shan Zheng", cursive;

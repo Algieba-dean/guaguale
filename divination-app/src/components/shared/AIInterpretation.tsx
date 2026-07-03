@@ -31,6 +31,8 @@ const hasPendingQuestions = (text: string | null): boolean => {
 
 export function AIInterpretation({ type, data, onResultLoaded }: AIInterpretationProps) {
   const [loading, setLoading] = useState(false);
+  const [streaming, setStreaming] = useState(false);
+  const [streamStarted, setStreamStarted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
   const [thinkingIndex, setThinkingIndex] = useState(0);
@@ -61,6 +63,8 @@ export function AIInterpretation({ type, data, onResultLoaded }: AIInterpretatio
 
   const fetchInterpretation = useCallback(async (context?: string) => {
     setLoading(true);
+    setStreaming(true);
+    setStreamStarted(false);
     setError(null);
     if (onResultLoaded) onResultLoaded(null);
     try {
@@ -68,14 +72,17 @@ export function AIInterpretation({ type, data, onResultLoaded }: AIInterpretatio
       if (context) {
         parsedData.additionalContext = context;
       }
-      const res = await getDivinationInterpretation(type, parsedData);
-      setResult(res);
+      const res = await getDivinationInterpretation(type, parsedData, (text) => {
+        setStreamStarted(true);
+        setResult(text);
+      });
       if (onResultLoaded) onResultLoaded(res);
     } catch (err: any) {
       setError(err.message || '获取AI解卦失败，请检查网络后重试。');
       if (onResultLoaded) onResultLoaded(null);
     } finally {
       setLoading(false);
+      setStreaming(false);
     }
   }, [type, serializedData, onResultLoaded]);
 
@@ -127,8 +134,9 @@ export function AIInterpretation({ type, data, onResultLoaded }: AIInterpretatio
     return () => clearInterval(interval);
   }, [loading, thinkingPhrases.length]);
 
-  // Fetch immediately on load
+  // Fetch immediately on load (clearing previous result if parameters change)
   useEffect(() => {
+    setResult(null);
     fetchInterpretation();
   }, [fetchInterpretation]);
 
@@ -143,7 +151,19 @@ export function AIInterpretation({ type, data, onResultLoaded }: AIInterpretatio
   // Simple Markdown Parser to avoid external dependencies
   const renderContent = (text: string) => {
     const lines = text.split('\n');
+    
+    // Find the last index of non-empty line
+    let lastNonEmptyIndex = -1;
+    for (let i = lines.length - 1; i >= 0; i--) {
+      if (lines[i].trim() !== '') {
+        lastNonEmptyIndex = i;
+        break;
+      }
+    }
+
     return lines.map((line, index) => {
+      const isLast = index === lastNonEmptyIndex;
+
       // Heading 3
       if (line.startsWith('### ')) {
         const title = line.replace('### ', '').trim();
@@ -153,6 +173,7 @@ export function AIInterpretation({ type, data, onResultLoaded }: AIInterpretatio
             className="text-base font-serif text-gold border-l-2 border-gold pl-2.5 mt-6 mb-3 tracking-wide flex items-center gap-1.5"
           >
             {title}
+            {isLast && streaming && <span className="inline-block w-1.5 h-4 bg-gold animate-pulse ml-1" />}
           </h4>
         );
       }
@@ -186,6 +207,7 @@ export function AIInterpretation({ type, data, onResultLoaded }: AIInterpretatio
           className="text-xs text-muted font-sans font-light leading-relaxed mb-3.5 tracking-wide text-justify"
         >
           {parts.length > 0 ? parts : line}
+          {isLast && streaming && <span className="inline-block w-1 h-3 bg-gold animate-pulse ml-0.5 align-middle" />}
         </p>
       );
     });
@@ -205,9 +227,9 @@ export function AIInterpretation({ type, data, onResultLoaded }: AIInterpretatio
         </h3>
         <div className="flex items-center gap-3">
           <button
-            onClick={handleCopyPrompt}
-            className="px-3 py-1 rounded-full border border-gold/30 hover:border-gold text-[10px] text-gold tracking-wider font-sans transition-all active:scale-95 cursor-pointer bg-cream/5 hover:bg-cream/10"
-            title="复制排盘提示词，可自行粘贴到 ChatGPT / Claude 等大模型提问"
+              onClick={handleCopyPrompt}
+              className="px-3 py-1 rounded-full border border-gold/30 hover:border-gold text-[10px] text-gold tracking-wider font-sans transition-all active:scale-95 cursor-pointer bg-cream/5 hover:bg-cream/10"
+              title="复制排盘提示词，可自行粘贴到 ChatGPT / Claude 等大模型提问"
           >
             {copied ? '✓ 已复制提示词' : '📋 复制排盘提示词'}
           </button>
@@ -220,7 +242,7 @@ export function AIInterpretation({ type, data, onResultLoaded }: AIInterpretatio
       </div>
 
       {/* Loading state */}
-      {loading && (
+      {loading && !streamStarted && !result && (
         <div className="py-12 flex flex-col items-center justify-center space-y-4">
           <div className="relative w-12 h-12">
             {/* Spinning Gold Trigram ring */}
@@ -256,9 +278,26 @@ export function AIInterpretation({ type, data, onResultLoaded }: AIInterpretatio
       )}
 
       {/* Success / Result state */}
-      {!loading && !error && result && (
-        <div className="space-y-2 animate-fadeIn prose max-w-none">
+      {!error && result && (
+        <div 
+          className={`space-y-2 animate-fadeIn prose max-w-none transition-opacity duration-300 ${
+            loading && !streamStarted ? 'opacity-30 pointer-events-none' : 'opacity-100'
+          }`}
+        >
           {renderContent(result)}
+        </div>
+      )}
+
+      {/* Inline loading indicator for follow-up prompts to prevent layout flicker */}
+      {loading && !streamStarted && result && (
+        <div className="mt-4 p-4 bg-gold-tint/5 border border-gold/10 rounded-2xl animate-pulse flex items-center gap-3">
+          <div className="relative w-4 h-4 flex-shrink-0">
+            {/* Spinning Gold Trigram ring */}
+            <div className="absolute inset-0 rounded-full border border-gold/20 border-t-gold animate-spin" />
+          </div>
+          <p className="text-xs text-gold font-sans font-light tracking-wide">
+            {thinkingPhrases[thinkingIndex]}
+          </p>
         </div>
       )}
 

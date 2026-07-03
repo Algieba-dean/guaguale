@@ -40,13 +40,35 @@ export function QuestionPage() {
               <textarea
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
-                placeholder="例如：这份工作是否适合我？"
+                placeholder={`例如：\n【占问事由】我与某公司合作的新项目这周能否顺利签约？\n【当前处境】方案已交，对方正在进行方案评审，预计周三给反馈。\n【期望时间】期望本周五前完成签约。\n（信息越详实，用神与应期推算越精准）`}
                 className="w-full px-4 py-3 rounded-2xl border border-border bg-cream/60 text-ink placeholder-muted/65 font-sans font-light focus:outline-none focus:ring-1 focus:ring-gold/40 focus:border-gold resize-none text-sm transition-all duration-300"
-                rows={4}
+                rows={5}
               />
               <p className="text-[11px] text-muted font-sans font-light mt-2">
                 问题将保存在本地占卜记录中，方便日后回顾与验证卦验。
               </p>
+
+              {/* Guochao Styled Guideline Card */}
+              <div className="mt-4 p-4 bg-gold-tint/10 border border-gold/15 rounded-2xl space-y-2.5">
+                <p className="text-xs text-gold font-medium flex items-center gap-1.5">
+                  <span>💡</span>
+                  <span>摊主解卦小贴士：如何提问更精准？</span>
+                </p>
+                <ul className="text-[11px] text-muted font-sans font-light leading-relaxed list-disc pl-4 space-y-1.5 text-left">
+                  <li>
+                    <strong className="text-ink/80 font-normal">明确主体与对象</strong>：如“我与某客户的合作”、“帮妹妹求升学考试”等。
+                  </li>
+                  <li>
+                    <strong className="text-ink/80 font-normal">说明具体所求</strong>：六爻取“用神”需对应具体事物（如求职取“官鬼”、求财取“妻财”、求升学取“父母”），问法越明确，用神定位越准。
+                  </li>
+                  <li>
+                    <strong className="text-ink/80 font-normal">设定时间范围</strong>：如“这周内”、“本月内”、“今年年底前”，这有利于推算精准的“应期”。
+                  </li>
+                  <li>
+                    <strong className="text-ink/80 font-normal">补充当前简要现状</strong>：如“已于昨日提交方案，目前对方在审核”等，有助于大模型结合现实处境进行逻辑断卦。
+                  </li>
+                </ul>
+              </div>
             </div>
 
             {/* Mode Selection */}

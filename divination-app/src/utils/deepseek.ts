@@ -331,7 +331,8 @@ ${data.additionalContext}
 
 export async function getDivinationInterpretation(
   type: 'liuyao' | 'meihua' | 'ziwei',
-  data: any
+  data: any,
+  onChunk?: (text: string) => void
 ): Promise<string> {
   const client = getOpenAIClient();
   if (!apiKey) {
@@ -341,16 +342,37 @@ export async function getDivinationInterpretation(
   const { prompt, systemMessage } = getDivinationPrompt(type, data);
 
   try {
-    const response = await client.chat.completions.create({
-      model: model,
-      messages: [
-        { role: 'system', content: systemMessage },
-        { role: 'user', content: prompt }
-      ],
-      stream: false
-    });
+    if (onChunk) {
+      const stream = await client.chat.completions.create({
+        model: model,
+        messages: [
+          { role: 'system', content: systemMessage },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0,
+        stream: true
+      });
 
-    return response.choices[0].message.content || '解卦未生成，请重试。';
+      let fullText = '';
+      for await (const chunk of stream) {
+        const content = chunk.choices[0]?.delta?.content || '';
+        fullText += content;
+        onChunk(fullText);
+      }
+      return fullText;
+    } else {
+      const response = await client.chat.completions.create({
+        model: model,
+        messages: [
+          { role: 'system', content: systemMessage },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0,
+        stream: false
+      });
+
+      return response.choices[0].message.content || '解卦未生成，请重试。';
+    }
   } catch (error: any) {
     console.error('DeepSeek API Call Failed:', error);
     throw new Error(error.message || 'API 请求发生错误，请检查网络并重试。');
