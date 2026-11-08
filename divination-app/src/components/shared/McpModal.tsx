@@ -8,7 +8,7 @@ interface McpModalProps {
 export const McpModal: React.FC<McpModalProps> = ({ isOpen, onClose }) => {
   const [copiedType, setCopiedType] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'claude' | 'cursor' | 'antigravity'>('antigravity');
-  const [deployMode, setDeployMode] = useState<'cloud' | 'local'>('cloud');
+  const [deployMode, setDeployMode] = useState<'local' | 'cloud'>('local');
 
   if (!isOpen) return null;
 
@@ -68,9 +68,9 @@ export const McpModal: React.FC<McpModalProps> = ({ isOpen, onClose }) => {
     }, null, 2)
   };
 
-  const currentConfig = deployMode === 'cloud'
-    ? cloudConfigs[activeTab]
-    : localConfigs[activeTab];
+  const currentConfig = deployMode === 'local'
+    ? localConfigs[activeTab]
+    : cloudConfigs[activeTab];
 
   const handleCopy = (text: string, type: string) => {
     navigator.clipboard.writeText(text);
@@ -95,7 +95,7 @@ export const McpModal: React.FC<McpModalProps> = ({ isOpen, onClose }) => {
             </svg>
             <div>
               <h3 className="font-serif text-lg font-medium text-ink">小卦摊 MCP 协议接口</h3>
-              <p className="text-xs text-muted">支持云端免部署与本地运行，为 AI 助手接入摇签抽签与六爻排盘</p>
+              <p className="text-xs text-muted">标准 Model Context Protocol 支持，为 AI 助手接入摇签抽签与六爻排盘</p>
             </div>
           </div>
           <button
@@ -111,22 +111,14 @@ export const McpModal: React.FC<McpModalProps> = ({ isOpen, onClose }) => {
           {/* 部署模式切换 */}
           <div className="flex items-center justify-between p-3 rounded-xl bg-gold-tint/30 border border-gold/20">
             <div>
-              <span className="font-serif font-medium text-ink text-sm">连接模式</span>
+              <span className="font-serif font-medium text-ink text-sm">运行模式</span>
               <p className="text-xs text-muted">
-                {deployMode === 'cloud' 
-                  ? '云端模式（推荐）：直接连接 https://xgt.algieba12.cn/mcp，跨设备免安装' 
-                  : '本地模式：在本地环境直接运行 node 脚本，离线可用'}
+                {deployMode === 'local' 
+                  ? '本地模式（推荐）：在本地环境直接运行 Node 脚本，离线稳定可用' 
+                  : '云端模式：连接云端服务'}
               </p>
             </div>
             <div className="flex gap-1 p-1 bg-cream rounded-lg border border-border">
-              <button
-                onClick={() => setDeployMode('cloud')}
-                className={`px-3 py-1 rounded text-xs transition-colors ${
-                  deployMode === 'cloud' ? 'bg-gold text-cream font-medium' : 'text-muted hover:text-ink'
-                }`}
-              >
-                云端 (HTTPS)
-              </button>
               <button
                 onClick={() => setDeployMode('local')}
                 className={`px-3 py-1 rounded text-xs transition-colors ${
@@ -134,6 +126,14 @@ export const McpModal: React.FC<McpModalProps> = ({ isOpen, onClose }) => {
                 }`}
               >
                 本地 (Stdio)
+              </button>
+              <button
+                onClick={() => setDeployMode('cloud')}
+                className={`px-3 py-1 rounded text-xs transition-colors ${
+                  deployMode === 'cloud' ? 'bg-gold text-cream font-medium' : 'text-muted hover:text-ink'
+                }`}
+              >
+                云端 (HTTPS)
               </button>
             </div>
           </div>

@@ -60,31 +60,8 @@
 
 #### 客户端接入配置示例：
 
-**1. 云端直连模式（推荐，免本地安装）**
-在 Antigravity 或 Cursor 的 `mcpServers` 设置中添加云端 Streamable HTTP 端点：
-```json
-{
-  "mcpServers": {
-    "xiaoguatan": {
-      "url": "https://xgt.algieba12.cn/mcp"
-    }
-  }
-}
-```
-若使用 Claude Desktop（仅支持 stdio 进程），可使用 `mcp-remote` 桥接：
-```json
-{
-  "mcpServers": {
-    "xiaoguatan": {
-      "command": "npx",
-      "args": ["-y", "mcp-remote", "https://xgt.algieba12.cn/mcp"]
-    }
-  }
-}
-```
-
-**2. 本地离线模式**
-在 `claude_desktop_config.json` 或 Cursor 中添加本地脚本：
+**1. 本地标准模式（推荐，本地 Stdio 直连，极速且离线可用）**
+在 Antigravity、Cursor 或 Claude Desktop 中添加本地脚本运行配置：
 ```json
 {
   "mcpServers": {
@@ -95,9 +72,23 @@
   }
 }
 ```
-本地启动命令：
+本地运行命令：
 ```bash
 npm run mcp        # Stdio 交互模式（默认）
+npm run mcp:sse    # SSE 模式（监听 3001 端口）
+```
+
+**2. 云端直连模式（仅在部署有支持动态 POST/SSE 的后端代理或 Worker 时使用）**
+在支持 HTTP MCP 的客户端中配置端点：
+```json
+{
+  "mcpServers": {
+    "xiaoguatan": {
+      "url": "https://xgt.algieba12.cn/mcp"
+    }
+  }
+}
+```
 npm run mcp:sse    # SSE HTTP 模式（监听 3001 端口）
 ```
 
