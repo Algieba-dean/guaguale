@@ -1,11 +1,14 @@
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
 import { useTheme } from '../../hooks/useTheme';
+import { McpModal } from '../shared/McpModal';
 
 export function Header() {
   const { isInstallable, installApp } = usePWAInstall();
   const { isDark, toggleTheme } = useTheme();
   const location = useLocation();
+  const [mcpOpen, setMcpOpen] = useState(false);
 
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
@@ -56,6 +59,19 @@ export function Header() {
               })}
             </nav>
 
+            {/* MCP Modal Trigger Button */}
+            <button
+              onClick={() => setMcpOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gold/40 text-gold text-xs font-sans hover:bg-gold hover:text-cream transition-all duration-300 shadow-sm active:scale-95 cursor-pointer"
+              title="MCP 接口配置 (AI 助手接入)"
+            >
+              <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.75">
+                <circle cx="10" cy="10" r="7" />
+                <path d="M10 3 A 3.5 3.5 0 0 0 10 10 A 3.5 3.5 0 0 1 10 17" />
+              </svg>
+              <span>MCP 接口</span>
+            </button>
+
             {/* Theme Toggle Button */}
             <button
               onClick={toggleTheme}
@@ -96,6 +112,8 @@ export function Header() {
           </div>
         </div>
       </div>
+
+      <McpModal isOpen={mcpOpen} onClose={() => setMcpOpen(false)} />
     </header>
   );
 }

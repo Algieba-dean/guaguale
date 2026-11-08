@@ -7,9 +7,12 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "mcp": "tsx src/mcp/server.ts",
+    "mcp:sse": "tsx src/mcp/server.ts --sse"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "framer-motion": "^12.40.0",
     "html-to-image": "^1.11.13",
     "html2canvas": "^1.4.1",
@@ -19,7 +22,8 @@
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-router-dom": "^7.18.0",
-    "uuid": "^14.0.1"
+    "uuid": "^14.0.1",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -38,6 +42,7 @@
     "postcss": "^8.5.15",
     "sharp": "^0.35.2",
     "tailwindcss": "^4.3.1",
+    "tsx": "^4.23.15",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
     "vite": "^8.0.12",

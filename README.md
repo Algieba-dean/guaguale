@@ -44,6 +44,38 @@
   - 动态加载站点二维码。在分享卡片中自动展示求占问题（若有）、盘面核心符号图表（如卦象图或紫微4x4网格）、AI 一语以及扫码网址。
 - **历史卦记管理**：基于 Web LocalStorage 实现本地数据库，存储容量达到 500 条上限时自动触发警告，支持准确度标记、自定义批注备注与删除管理。
 
+### 5. Model Context Protocol (MCP) 接口服务
+
+本系统内置基于官方 `@modelcontextprotocol/sdk` 构建的 **小卦摊 MCP 服务**，支持标准 Stdio 协议及 SSE 传输，可将专业的**摇签抽签**与**周易六爻排盘**能力无缝接入到 Cursor、Claude Desktop、Antigravity 等主流大模型客户端中。
+
+#### 支持的 MCP Tools（工具）：
+- `draw_fortune_stick`：**摇签抽签**。支持 `today-fortune`（今日运势签）、`lunch-decider`（午餐吃什么）、`action-decision`（行止快速决策）等签池，返回签号、签文、吉凶、诗签与摊主白话解签指导。
+- `list_fortune_pools`：**签池列表**。查询当前所有可用签池概况与说明。
+- `cast_liuyao`：**六爻纳甲起卦排盘**。支持自动三钱法起卦或指定六爻数值，精准计算年月日时四柱干支、日旬空亡、本宫五行、六亲六神、世应位置、动变生克及原典卦爻辞。
+- `get_hexagram_detail`：**周易六十四卦易经原典库**。按卦名、卦序号或六位二进制结构查询原典卦象与爻辞。
+
+#### 支持的 MCP Prompts（预设提示词）：
+- `liuyao_reading`：以专业易学大师与知性摊主口吻，依照“定用神、论旺衰、辨动变、看世应、断行止”五步逻辑进行严谨断卦。
+- `fortune_reading`：以温暖生活化的国风摊主口吻，结合用户困扰为签文做通透的生活指导。
+
+#### 客户端接入配置示例：
+在 `claude_desktop_config.json` 或 Cursor 的 MCP 设置中添加：
+```json
+{
+  "mcpServers": {
+    "xiaoguatan": {
+      "command": "node",
+      "args": ["/Users/mac/web/zhanbo/mcp-server.mjs"]
+    }
+  }
+}
+```
+也可以在 `divination-app` 目录下通过命令行直接测试运行：
+```bash
+npm run mcp        # Stdio 交互模式（默认）
+npm run mcp:sse    # SSE HTTP 模式（监听 3001 端口）
+```
+
 ---
 
 ## 目录结构
