@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && node scripts/build-worker.mjs",
+    "build:worker": "node scripts/build-worker.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "mcp": "tsx src/mcp/server.ts",

@@ -60,8 +60,31 @@
 
 #### 客户端接入配置示例：
 
-**1. 本地标准模式（推荐，本地 Stdio 直连，极速且离线可用）**
-在 Antigravity、Cursor 或 Claude Desktop 中添加本地脚本运行配置：
+**1. 云端直连模式（方案 A：官方公网服务，跨设备免安装）**
+小卦摊已在线上全面部署了 Cloudflare 原生 MCP 接口服务。在 Antigravity 或 Cursor 的 `mcpServers` 设置中直接添加云端端点：
+```json
+{
+  "mcpServers": {
+    "xiaoguatan": {
+      "url": "https://xgt.algieba12.cn/mcp"
+    }
+  }
+}
+```
+若使用 Claude Desktop（官方客户端仅支持 stdio 命令），可通过 `mcp-remote` 桥接连接该云端服务：
+```json
+{
+  "mcpServers": {
+    "xiaoguatan": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://xgt.algieba12.cn/mcp"]
+    }
+  }
+}
+```
+
+**2. 本地离线模式（作为备选）**
+在需要纯离线运行的环境中，可配置本地 Node 脚本：
 ```json
 {
   "mcpServers": {
@@ -74,20 +97,8 @@
 ```
 本地运行命令：
 ```bash
-npm run mcp        # Stdio 交互模式（默认）
-npm run mcp:sse    # SSE 模式（监听 3001 端口）
-```
-
-**2. 云端直连模式（仅在部署有支持动态 POST/SSE 的后端代理或 Worker 时使用）**
-在支持 HTTP MCP 的客户端中配置端点：
-```json
-{
-  "mcpServers": {
-    "xiaoguatan": {
-      "url": "https://xgt.algieba12.cn/mcp"
-    }
-  }
-}
+npm run mcp        # Stdio 交互模式
+npm run mcp:sse    # 本地 SSE 服务（监听 3001 端口）
 ```
 npm run mcp:sse    # SSE HTTP 模式（监听 3001 端口）
 ```

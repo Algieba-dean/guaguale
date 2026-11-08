@@ -1,10 +1,7 @@
 {
   "mcpServers": {
     "xiaoguatan": {
-      "command": "node",
-      "args": [
-        "/Users/mac/web/zhanbo/mcp-server.mjs"
-      ]
+      "url": "https://xgt.algieba12.cn/mcp"
     }
   }
 }

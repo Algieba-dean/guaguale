@@ -1,0 +1,9 @@
+name = "xiaoguatan-mcp"
+main = "worker.js"
+compatibility_date = "2024-11-05"
+compatibility_flags = ["nodejs_compat"]
+
+# 绑定线上小卦摊站点的 /mcp 路径
+[routes]
+pattern = "xgt.algieba12.cn/mcp*"
+zone_name = "algieba12.cn"
