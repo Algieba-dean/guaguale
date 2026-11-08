@@ -7,43 +7,70 @@ interface McpModalProps {
 
 export const McpModal: React.FC<McpModalProps> = ({ isOpen, onClose }) => {
   const [copiedType, setCopiedType] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'claude' | 'cursor' | 'antigravity'>('claude');
+  const [activeTab, setActiveTab] = useState<'claude' | 'cursor' | 'antigravity'>('antigravity');
+  const [deployMode, setDeployMode] = useState<'cloud' | 'local'>('cloud');
 
   if (!isOpen) return null;
 
-  // 配置内容
-  const claudeConfig = JSON.stringify({
-    mcpServers: {
-      "xiaoguatan": {
-        "command": "node",
-        "args": ["/Users/mac/web/zhanbo/mcp-server.mjs"]
-      }
-    }
-  }, null, 2);
+  // 云端配置 (Streamable HTTP 官方规范)
+  const cloudEndpoint = 'https://xgt.algieba12.cn/mcp';
 
-  const cursorConfig = JSON.stringify({
-    "mcpServers": {
-      "xiaoguatan": {
-        "command": "node",
-        "args": ["/Users/mac/web/zhanbo/mcp-server.mjs"]
+  const cloudConfigs = {
+    antigravity: JSON.stringify({
+      mcpServers: {
+        "xiaoguatan": {
+          "url": cloudEndpoint
+        }
       }
-    }
-  }, null, 2);
-
-  const antigravityConfig = JSON.stringify({
-    "mcpServers": {
-      "xiaoguatan": {
-        "command": "node",
-        "args": ["/Users/mac/web/zhanbo/mcp-server.mjs"]
+    }, null, 2),
+    cursor: JSON.stringify({
+      mcpServers: {
+        "xiaoguatan": {
+          "url": cloudEndpoint
+        }
       }
-    }
-  }, null, 2);
+    }, null, 2),
+    claude: JSON.stringify({
+      mcpServers: {
+        "xiaoguatan": {
+          "command": "npx",
+          "args": ["-y", "mcp-remote", cloudEndpoint]
+        }
+      }
+    }, null, 2)
+  };
 
-  const currentConfig = activeTab === 'claude'
-    ? claudeConfig
-    : activeTab === 'cursor'
-    ? cursorConfig
-    : antigravityConfig;
+  // 本地配置
+  const localConfigs = {
+    antigravity: JSON.stringify({
+      mcpServers: {
+        "xiaoguatan": {
+          "command": "node",
+          "args": ["/Users/mac/web/zhanbo/mcp-server.mjs"]
+        }
+      }
+    }, null, 2),
+    cursor: JSON.stringify({
+      mcpServers: {
+        "xiaoguatan": {
+          "command": "node",
+          "args": ["/Users/mac/web/zhanbo/mcp-server.mjs"]
+        }
+      }
+    }, null, 2),
+    claude: JSON.stringify({
+      mcpServers: {
+        "xiaoguatan": {
+          "command": "node",
+          "args": ["/Users/mac/web/zhanbo/mcp-server.mjs"]
+        }
+      }
+    }, null, 2)
+  };
+
+  const currentConfig = deployMode === 'cloud'
+    ? cloudConfigs[activeTab]
+    : localConfigs[activeTab];
 
   const handleCopy = (text: string, type: string) => {
     navigator.clipboard.writeText(text);
@@ -68,7 +95,7 @@ export const McpModal: React.FC<McpModalProps> = ({ isOpen, onClose }) => {
             </svg>
             <div>
               <h3 className="font-serif text-lg font-medium text-ink">小卦摊 MCP 协议接口</h3>
-              <p className="text-xs text-muted">为 Claude、Cursor、Antigravity 等接入摇签抽签与六爻排盘</p>
+              <p className="text-xs text-muted">支持云端免部署与本地运行，为 AI 助手接入摇签抽签与六爻排盘</p>
             </div>
           </div>
           <button
@@ -81,6 +108,36 @@ export const McpModal: React.FC<McpModalProps> = ({ isOpen, onClose }) => {
 
         {/* Content Body */}
         <div className="p-6 overflow-y-auto space-y-6 text-sm text-ink font-sans">
+          {/* 部署模式切换 */}
+          <div className="flex items-center justify-between p-3 rounded-xl bg-gold-tint/30 border border-gold/20">
+            <div>
+              <span className="font-serif font-medium text-ink text-sm">连接模式</span>
+              <p className="text-xs text-muted">
+                {deployMode === 'cloud' 
+                  ? '云端模式（推荐）：直接连接 https://xgt.algieba12.cn/mcp，跨设备免安装' 
+                  : '本地模式：在本地环境直接运行 node 脚本，离线可用'}
+              </p>
+            </div>
+            <div className="flex gap-1 p-1 bg-cream rounded-lg border border-border">
+              <button
+                onClick={() => setDeployMode('cloud')}
+                className={`px-3 py-1 rounded text-xs transition-colors ${
+                  deployMode === 'cloud' ? 'bg-gold text-cream font-medium' : 'text-muted hover:text-ink'
+                }`}
+              >
+                云端 (HTTPS)
+              </button>
+              <button
+                onClick={() => setDeployMode('local')}
+                className={`px-3 py-1 rounded text-xs transition-colors ${
+                  deployMode === 'local' ? 'bg-gold text-cream font-medium' : 'text-muted hover:text-ink'
+                }`}
+              >
+                本地 (Stdio)
+              </button>
+            </div>
+          </div>
+
           {/* 能力简介 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="p-3.5 rounded-xl border border-gold/20 bg-gold-tint/40 space-y-1.5">
@@ -94,10 +151,10 @@ export const McpModal: React.FC<McpModalProps> = ({ isOpen, onClose }) => {
 
             <div className="p-3.5 rounded-xl border border-gold/20 bg-gold-tint/40 space-y-1.5">
               <div className="flex items-center gap-2 font-medium text-gold font-serif">
-                <span>六爻纳甲排盘 (cast_liuyao)</span>
+                <span>六爻纳甲排盘与解析 (cast_liuyao / interpret_liuyao)</span>
               </div>
               <p className="text-xs text-muted leading-relaxed">
-                正统铜钱三掷起卦或手动指定爻象。精准推演年月日时四柱干支、日旬空亡、本宫五行、世应、六亲六神与动变生克。
+                正统铜钱三掷起卦，推演四柱干支、世应六亲六神与动变生克，支持带上下文的多轮连续深入追问！
               </p>
             </div>
           </div>
@@ -108,12 +165,12 @@ export const McpModal: React.FC<McpModalProps> = ({ isOpen, onClose }) => {
               <span className="font-medium text-xs tracking-wider text-muted uppercase">选择客户端配置</span>
               <div className="flex gap-1.5 p-1 bg-cream-light rounded-lg border border-border">
                 <button
-                  onClick={() => setActiveTab('claude')}
+                  onClick={() => setActiveTab('antigravity')}
                   className={`px-3 py-1 rounded-md text-xs transition-colors ${
-                    activeTab === 'claude' ? 'bg-gold text-cream font-medium' : 'text-muted hover:text-ink'
+                    activeTab === 'antigravity' ? 'bg-gold text-cream font-medium' : 'text-muted hover:text-ink'
                   }`}
                 >
-                  Claude Desktop
+                  Antigravity
                 </button>
                 <button
                   onClick={() => setActiveTab('cursor')}
@@ -124,26 +181,26 @@ export const McpModal: React.FC<McpModalProps> = ({ isOpen, onClose }) => {
                   Cursor
                 </button>
                 <button
-                  onClick={() => setActiveTab('antigravity')}
+                  onClick={() => setActiveTab('claude')}
                   className={`px-3 py-1 rounded-md text-xs transition-colors ${
-                    activeTab === 'antigravity' ? 'bg-gold text-cream font-medium' : 'text-muted hover:text-ink'
+                    activeTab === 'claude' ? 'bg-gold text-cream font-medium' : 'text-muted hover:text-ink'
                   }`}
                 >
-                  Antigravity
+                  Claude Desktop
                 </button>
               </div>
             </div>
 
             {/* 配置文件位置说明 */}
             <p className="text-xs text-muted">
-              {activeTab === 'claude' && (
-                <>配置文件位置：<code className="text-gold bg-cream-light px-1.5 py-0.5 rounded">~/Library/Application Support/Claude/claude_desktop_config.json</code></>
+              {activeTab === 'antigravity' && (
+                <>在 Antigravity 的 <code className="text-gold bg-cream-light px-1.5 py-0.5 rounded">mcp_config.json</code> 中追加配置（支持 Streamable HTTP 原生直连）</>
               )}
               {activeTab === 'cursor' && (
-                <>在 Cursor 设置中的 <strong>MCP Servers</strong> 中添加或配置 <code className="text-gold bg-cream-light px-1.5 py-0.5 rounded">~/.cursor/mcp.json</code></>
+                <>在 Cursor 设置中的 <strong>MCP Servers</strong> 添加或配置 <code className="text-gold bg-cream-light px-1.5 py-0.5 rounded">~/.cursor/mcp.json</code></>
               )}
-              {activeTab === 'antigravity' && (
-                <>在 Antigravity 的 MCP 配置文件 <code className="text-gold bg-cream-light px-1.5 py-0.5 rounded">mcp_config.json</code> 中追加配置</>
+              {activeTab === 'claude' && (
+                <>配置文件位置：<code className="text-gold bg-cream-light px-1.5 py-0.5 rounded">~/Library/Application Support/Claude/claude_desktop_config.json</code></>
               )}
             </p>
 
@@ -154,7 +211,7 @@ export const McpModal: React.FC<McpModalProps> = ({ isOpen, onClose }) => {
               </pre>
               <button
                 onClick={() => handleCopy(currentConfig, 'config')}
-                className="absolute top-2.5 right-2.5 px-3 py-1.5 rounded-md bg-gold/90 hover:bg-gold text-cream text-xs font-medium transition-all shadow-sm active:scale-95"
+                className="absolute top-2.5 right-2.5 px-3 py-1.5 rounded-md bg-gold/90 hover:bg-gold text-cream text-xs font-medium transition-all shadow-sm active:scale-95 cursor-pointer"
               >
                 {copiedType === 'config' ? '已复制配置' : '一键复制 JSON'}
               </button>
@@ -175,15 +232,15 @@ export const McpModal: React.FC<McpModalProps> = ({ isOpen, onClose }) => {
               <div className="flex items-start gap-2">
                 <span className="text-gold font-bold">•</span>
                 <div>
-                  <span className="text-ink font-medium">六爻排盘：</span>
-                  <span className="text-muted">“请用小卦摊占一卦六爻，我想问下半年换工作是否合适”</span>
+                  <span className="text-ink font-medium">六爻排盘与解析：</span>
+                  <span className="text-muted">“请用小卦摊占一卦六爻，我想问下半年换工作是否合适，并给出解卦依据”</span>
                 </div>
               </div>
               <div className="flex items-start gap-2">
                 <span className="text-gold font-bold">•</span>
                 <div>
-                  <span className="text-ink font-medium">卦辞查询：</span>
-                  <span className="text-muted">“查询周易第11卦地天泰的爻辞和含义”</span>
+                  <span className="text-ink font-medium">多轮深度追问：</span>
+                  <span className="text-muted">“接上一卦，如果我等到下个月再辞职，世爻的五行生克会变好吗？”</span>
                 </div>
               </div>
             </div>
@@ -192,10 +249,10 @@ export const McpModal: React.FC<McpModalProps> = ({ isOpen, onClose }) => {
 
         {/* Footer */}
         <div className="px-6 py-3 border-t border-border bg-cream-light/30 flex items-center justify-between text-xs text-muted">
-          <span>本地也可直接运行：<code className="text-gold font-mono">npm run mcp</code></span>
+          <span>云端端点：<code className="text-gold font-mono">{cloudEndpoint}</code></span>
           <button
             onClick={onClose}
-            className="px-4 py-1.5 rounded-full border border-border hover:border-gold/40 text-ink transition-colors font-medium"
+            className="px-4 py-1.5 rounded-full border border-border hover:border-gold/40 text-ink transition-colors font-medium cursor-pointer"
           >
             完成
           </button>

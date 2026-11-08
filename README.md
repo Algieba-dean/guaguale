@@ -59,7 +59,32 @@
 - `fortune_reading`：以温暖生活化的国风摊主口吻，结合用户困扰为签文做通透的生活指导。
 
 #### 客户端接入配置示例：
-在 `claude_desktop_config.json` 或 Cursor 的 MCP 设置中添加：
+
+**1. 云端直连模式（推荐，免本地安装）**
+在 Antigravity 或 Cursor 的 `mcpServers` 设置中添加云端 Streamable HTTP 端点：
+```json
+{
+  "mcpServers": {
+    "xiaoguatan": {
+      "url": "https://xgt.algieba12.cn/mcp"
+    }
+  }
+}
+```
+若使用 Claude Desktop（仅支持 stdio 进程），可使用 `mcp-remote` 桥接：
+```json
+{
+  "mcpServers": {
+    "xiaoguatan": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://xgt.algieba12.cn/mcp"]
+    }
+  }
+}
+```
+
+**2. 本地离线模式**
+在 `claude_desktop_config.json` 或 Cursor 中添加本地脚本：
 ```json
 {
   "mcpServers": {
@@ -70,7 +95,7 @@
   }
 }
 ```
-也可以在 `divination-app` 目录下通过命令行直接测试运行：
+本地启动命令：
 ```bash
 npm run mcp        # Stdio 交互模式（默认）
 npm run mcp:sse    # SSE HTTP 模式（监听 3001 端口）
